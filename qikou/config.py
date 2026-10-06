@@ -21,8 +21,8 @@ class Config:
 
     def scale_for_length(self, total):
         if total <= 150:
-            pass
-        elif total <= 400:
+            return
+        if total <= 400:
             self.max_chars = max(self.max_chars, 90)
             self.target_chars = max(self.target_chars, 30)
         elif total <= 800:
@@ -33,6 +33,11 @@ class Config:
             self.max_chars = max(self.max_chars, 160)
             self.target_chars = max(self.target_chars, 60)
             self.max_messages = max(self.max_messages, 10)
+        # 合并后的单条同样受「单条上限」约束。
+        # 若 merge_max_chars 固定在 60，档位放大后长文本的相邻对全都超过
+        # 60，合并会在半路停住，max_messages 永远够不到
+        # （866 字的输入产出 21 条，而该档位上限是 10 条）。
+        self.merge_max_chars = max(self.merge_max_chars, self.max_chars)
 
     def delay_for(self, msg):
         d = self.base_ms + len(msg) * self.per_char_ms \

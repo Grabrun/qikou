@@ -236,21 +236,23 @@ Every parameter of the `Config` class:
 | `min_chars` | 4 | Below this, try to merge with a neighbour |
 | `max_messages` | 6 | Soft cap on the message count. Over it, the shortest adjacent pair is merged |
 | `atomic_merge_prefix` | 20 | Threshold for merging a short prefix with a long atomic fragment |
-| `merge_max_chars` | 60 | Cap after a merge (not scaled up) |
+| `merge_max_chars` | 60 | Cap after a merge (scaled up to that tier's `max_chars`) |
 | `base_ms` | 500 | Base value of the human-like delay |
 | `per_char_ms` | 30 | Delay added per character |
 | `jitter_ms` | 200 | Random jitter |
 | `min_ms` | 300 | Minimum delay |
 | `max_ms` | 1800 | Maximum delay |
 
-**Adaptive length**: `split_reply()` relaxes `max_chars` according to the total length:
+**`max_messages` is a soft cap**: over it the shortest adjacent pair is merged, but list items, headings, tables, horizontal rules, standalone code blocks / URLs, and entries ending in a tilde never take part in a merge — so a reply full of structure can end up above this value. Plain prose does reach the cap: a merged message stays within `merge_max_chars`, which is scaled up together with the tier (see the table below).
 
-| Total length | max_chars | target_chars | max_messages |
-|---|---|---|---|
-| ≤ 150 | 60 | 20 | 6 |
-| ≤ 400 | 90 | 30 | 6 |
-| ≤ 800 | 120 | 45 | 8 |
-| > 800 | 160 | 60 | 10 |
+**Adaptive length**: `split_reply()` relaxes the per-message cap and the message-count cap according to the total length:
+
+| Total length | max_chars | target_chars | max_messages | merge_max_chars |
+|---|---|---|---|---|
+| ≤ 150 | 60 | 20 | 6 | 60 |
+| ≤ 400 | 90 | 30 | 6 | 90 |
+| ≤ 800 | 120 | 45 | 8 | 120 |
+| > 800 | 160 | 60 | 10 | 160 |
 
 To shift the overall feel (choppier or longer), change `max_chars` and `target_chars`.
 
