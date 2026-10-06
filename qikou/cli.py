@@ -95,7 +95,7 @@ def run_auto_test(path, out_path=None):
     start_time = time.time()
     total_msgs = 0
     max_name_len = max((len(name) for name, _ in cases), default=0)
-    with open(out_path, 'w', encoding='utf-8') as f:
+    with open(out_path, 'w', encoding='utf-8', newline='\n') as f:
         f.write(BANNER + "\n")
         f.write(" 气口 —— AI 回复分句器\n")
         f.write(" 自动测试报告\n")

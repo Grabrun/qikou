@@ -1,10 +1,11 @@
-# 冻结 v2.0 基线字节：不做任何行尾转换（-text）
+# 行尾统一为 LF（跨平台仓库标准）
 #
-# 本仓库的文本文件行尾本来就不统一：
-#   CRLF —— README.md / HANDOVER.md / Prompt.txt / tests/test.txt / legacy/*.py
-#   LF   —— qikou/*.py / Kaomoji/*.txt / LICENSE
-# 若交给 text=auto 归一化，首次提交就会改写磁盘上已有的字节。
-# 基线阶段以「逐字节可复现」优先，故全部关闭转换。
-# 日后若要统一行尾，请作为一次独立提交专门处理。
+# 所有文本文件一律：入库前归一化为 LF（text=auto），检出到工作区保持 LF（eol=lf）。
+#
+# 注意：Git for Windows 在 system 级设置了 core.autocrlf=true。
+# 若不显式写 eol=lf，LF 会在每次检出时被改写成 CRLF，行尾会再次分叉。
+# gitattributes 属性的优先级高于 core.autocrlf，因此这里可以覆盖该设置。
+#
+# 历史遗留的不一致行尾（文档 CRLF、源码 LF）已在「统一行尾为 LF」提交中一次性修正。
 
-* -text
+* text=auto eol=lf
