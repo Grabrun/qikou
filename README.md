@@ -1,5 +1,7 @@
 # 气口 (Qikou)
 
+**中文** | [English](README_en-US.md)
+
 > 让 AI 回复会呼吸。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
