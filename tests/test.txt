@@ -1,0 +1,447 @@
+[CASE] 001 中文句号后紧跟英文
+你好。Hello。再见。
+
+[CASE] 002 中文问号后无空格
+真的吗？为什么？怎么办？
+
+[CASE] 003 感叹号连用后接问号
+太棒了！！！真的吗？？？
+
+[CASE] 004 省略号后接句号
+我……。算了。
+
+[CASE] 005 省略号与破折号混用
+我——我……那个——算了。
+
+[CASE] 006 波浪号拖音多段
+好呀~没问题~等我一下下~
+
+[CASE] 007 重复语气词拖音
+嗯嗯嗯嗯嗯，知道了知道了。
+
+[CASE] 008 笑声与哭泣混合
+哈哈哈哈哈呜呜呜哈哈哈。
+
+[CASE] 009 迟疑重复加省略
+那个……那个……就是……嗯……
+
+[CASE] 010 强调多标点混合
+真的！！！超级好吃？？？你一定要试试！！！
+
+[CASE] 011 中英标点混排无空格
+这个功能叫Auto Split.它真的很好用!你觉得呢?
+
+[CASE] 012 英文缩写句点不拆
+Mr. Smith went to Washington at 3 p.m. He met Dr. Lee.
+
+[CASE] 013 URL含点号与查询
+见 https://example.com/a.b/c?d=e.f&g=h 后收藏。
+
+[CASE] 014 Markdown链接带标题
+请查看[官方文档](https://docs.example.com/v1.2 "标题")后再操作。
+
+[CASE] 015 行内代码含点号
+设置 `timeout=3.14` 和 `host=api.example.com` 后重试。
+
+[CASE] 016 多行代码块点号
+```python
+def split(text):
+    return text.split("。")
+```
+这段代码很简单。
+
+[CASE] 017 无序列表多行
+- 第一步：打开设置
+- 第二步：选择账号
+- 第三步：保存退出
+
+[CASE] 018 有序列表多行
+1. 先登录系统
+2. 然后进入控制台
+3. 最后创建实例
+
+[CASE] 019 嵌套无序列表结构
+- 前端
+  - React
+  - Vue
+- 后端
+  - Node
+  - Go
+
+[CASE] 020 任务列表勾选状态
+- [x] 已完成
+- [ ] 未完成
+- [ ] 待确认
+
+[CASE] 021 引用块多行
+> 这是引用第一行
+> 这是引用第二行
+> 引用结束后继续聊天。
+
+[CASE] 022 嵌套引用块结构
+> 外层引用
+>> 内层引用
+> 回到外层
+
+[CASE] 023 加粗斜体混用
+这是**重点内容**，也是*斜体内容*，不要拆坏标记。
+
+[CASE] 024 删除线高亮
+这是~~删除线~~和==高亮==内容。
+
+[CASE] 025 Markdown表格
+| 名称 | 数量 |
+| --- | --- |
+| 苹果 | 3 |
+| 香蕉 | 5 |
+
+[CASE] 026 Emoji连续表情
+今天心情超好 😀😀😀 明天也要加油 💪💪💪
+
+[CASE] 027 肤色与组合emoji
+你好👋🏽，这是👨‍👩‍👧‍👦家庭，旗帜🇨🇳。
+
+[CASE] 028 键帽与符号emoji
+按 1️⃣ 或 #️⃣ 选择，然后点 ✅。
+
+[CASE] 029 颜文字表情
+别生气啦 (╯°□°）╯︵ ┻━┻ 我错了嘛。
+
+[CASE] 030 网络用语缩写
+这个操作真的 yyds，xswl，绝绝子。
+
+[CASE] 031 极短单字回复
+好
+
+[CASE] 032 空白字符与换行
+  	 
+   
+	
+
+[CASE] 033 纯标点堆叠
+。。。。。。。。。。。。。。
+
+[CASE] 034 符号堆叠混合
+！！！？？？……！！！？？？
+
+[CASE] 035 键盘乱打串
+asdkjfhaskjdfh qweoruwoieu zxcmnv,zxcmnv。
+
+[CASE] 036 无标点长句
+我今天去了超市然后买了很多东西有苹果香蕉橙子还有牛奶面包最后回家做饭吃
+
+[CASE] 037 超长无断点字母
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+[CASE] 038 重复句子堆叠
+好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的
+
+[CASE] 039 多空行分隔
+第一段内容。
+
+
+第二段内容。
+
+
+第三段内容。
+
+[CASE] 040 缩进代码片段
+    if a > b:
+        print("a.b")
+        return a
+
+[CASE] 041 LaTeX行内公式
+公式是 $E = mc^2$，还有 $$a.b = c.d$$，不要拆开。
+
+[CASE] 042 LaTeX块公式
+$$
+\int_0^1 x^2 dx = \frac{1}{3}
+$$
+请计算。
+
+[CASE] 043 话题标签与提及
+#今日话题# 今天@小明 也来了，大家怎么看？
+
+[CASE] 044 电话号码日期时间
+联系电话 138-1234-5678，日期 2024.12.31，时间 23:59。
+
+[CASE] 045 版本号与小数
+升级到 v1.2.3，阈值设为 0.75，兼容 Python 3.11。
+
+[CASE] 046 文件路径反斜杠
+路径是 C:\Users\Test\Documents\a.b.txt，请确认。
+
+[CASE] 047 英文缩写列表
+We need apples, oranges, etc. Then we can go, e.g. tomorrow.
+
+[CASE] 048 引号内句号
+他说：“今天不去了。”然后转身离开。
+
+[CASE] 049 括号内句号
+这是补充说明（比如价格、时间等。）后面继续。
+
+[CASE] 050 破折号连接
+我本来想说的——但是又忘了——算了不说了。
+
+[CASE] 051 分号分隔长句
+我喜欢苹果；你喜欢香蕉；他喜欢橙子；大家口味不同。
+
+[CASE] 052 冒号后接列表
+需要准备：身份证、银行卡、手机号，以及复印件。
+
+[CASE] 053 书名号内容
+我最近在看《三体》。里面提到《黑暗森林》法则。
+
+[CASE] 054 HTML标签换行
+你好<br>这是第二行<br/>这是第三行。
+
+[CASE] 055 零宽字符夹杂
+这​是​一​段​带​零​宽​空​格​的​文​字。
+
+[CASE] 056 全角半角混用
+ＡＢＣ１２３，abc123。全角，半角,混用.
+
+[CASE] 057 中日韩混排
+你好，こんにちは，안녕하세요。今天天气不错。
+
+[CASE] 058 中英混排长句
+这个 API 返回 JSON，里面包含 user.name 和 user.age，请解析后展示。
+
+[CASE] 059 数字单位连写
+体重 65.5kg，身高 175cm，距离 3.2km，用时 1h30min。
+
+[CASE] 060 表情后接文字
+😊好的👌我马上处理📎附件记得查收✅
+
+[CASE] 061 邮箱地址标点
+请联系 test.user+tag@example.co.uk，谢谢。
+
+[CASE] 062 IP与端口
+服务器 192.168.1.1:8080 和 10.0.0.2:443 都要检查。
+
+[CASE] 063 货币金额格式
+总价 $1,234.56，折扣 ¥789.00，税率 8.5%。
+
+[CASE] 064 百分比范围
+增长 10%-20%，置信区间 95%～99%，误差 ±0.5。
+
+[CASE] 065 Markdown图片
+![截图](https://example.com/a.b.png "标题") 请查看。
+
+[CASE] 066 Markdown脚注
+这里有个脚注[^1]，后面还有[^note]。
+
+[^1]: 脚注内容。
+[^note]: 另一个脚注。
+
+[CASE] 067 水平线与分隔
+第一段
+---
+第二段
+***
+第三段
+
+[CASE] 068 Markdown转义字符
+这是 \*不是斜体\*，这是 \[不是链接\]。
+
+[CASE] 069 YAML配置
+name: test
+version: 1.2.3
+items:
+  - a
+  - b
+
+[CASE] 070 JSON对象
+{"name":"张三","age":30,"city":"北京","score":95.5}
+
+[CASE] 071 XML片段
+<user id="1"><name>张三</name><age>30</age></user>
+
+[CASE] 072 SQL语句
+SELECT id, name FROM users WHERE age > 18 ORDER BY created_at DESC;
+
+[CASE] 073 俄语中文混排
+Привет, 你好! Как дела? 我很好。
+
+[CASE] 074 阿拉伯语混排
+مرحبا، 你好。كيف حالك？ 我很好。
+
+[CASE] 075 希伯来语混排
+שלום, 你好! מה שלומך? 我很好。
+
+[CASE] 076 泰语中文混排
+สวัสดี 你好! สบายดีไหม? 我很好。
+
+[CASE] 077 越南语混排
+Xin chào 你好! Bạn khỏe không? 我很好。
+
+[CASE] 078 法语中文混排
+Bonjour, 你好! Ça va? 我很好。
+
+[CASE] 079 德语中文混排
+Hallo, 你好! Wie geht's? 我很好。
+
+[CASE] 080 西班牙语混排
+Hola, 你好! ¿Qué tal? 我很好。
+
+[CASE] 081 代码块含空行
+```js
+const a = 1;
+
+const b = 2;
+```
+结束。
+
+[CASE] 082 代码块含标点
+```bash
+echo "hello.world"; ls -la | grep ".txt"
+```
+结束。
+
+[CASE] 083 行内代码含URL
+访问 `https://example.com/a.b?c=d` 即可。
+
+[CASE] 084 链接带括号
+参见 [链接](https://example.com/a_(b).c) 说明。
+
+[CASE] 085 链接带锚点
+打开 https://example.com/page#section.1 查看。
+
+[CASE] 086 链接被标点包围
+请看(https://example.com/a.b)。然后继续。
+
+[CASE] 087 数学公式与标点
+当 $x=1.5$ 时，$y=2.5$；否则 $y=0$。
+
+[CASE] 088 化学式与箭头
+反应式 2H₂ + O₂ → 2H₂O，条件点燃。
+
+[CASE] 089 温度单位符号
+温度从 36.5°C 升到 37.2°C，注意观察。
+
+[CASE] 090 时间范围连接符
+会议 09:30-11:00，午休 12:00~13:00。
+
+[CASE] 091 省略号在引号内
+他说：“我……不知道……”然后沉默。
+
+[CASE] 092 感叹问号组合
+真的吗？！不会吧？！太离谱了！？
+
+[CASE] 093 连续波浪拖音
+好~~~啦~~~知~~~道~~~了~~~
+
+[CASE] 094 重复标点后文字
+好的。。。。。。那就这样吧。
+
+[CASE] 095 错别字与口语
+我以经吃过了，在等等他，他马山就来。
+
+[CASE] 096 拼音中文混排
+wo men 今天 qu 公园，hao 不好？
+
+[CASE] 097 火星文网络变体
+莪們嘟茬，妳恏嗎？莪佷恏。
+
+[CASE] 098 繁体中文文本
+今天天氣很好。我們去走走，順便買點水果。
+
+[CASE] 099 竖排标点符号
+你好︒今天很好︒明天见︒
+
+[CASE] 100 制表符分隔
+姓名	年龄	城市
+张三	30	北京
+李四	25	上海
+
+[CASE] 101 CRLF换行
+第一行\r\n第二行\r\n第三行
+
+[CASE] 102 BOM开头
+﻿开头有BOM的文本。后面继续。
+
+[CASE] 103 控制字符夹杂
+这里有个控制字符：\x01 后面继续。
+
+[CASE] 104 只有emoji
+😀😀😀😀😀😀😀😀😀😀
+
+[CASE] 105 仅包含链接
+https://example.com/a.b/c?d=e.f
+
+[CASE] 106 仅包含代码块
+```
+a.b.c
+d.e.f
+```
+
+[CASE] 107 仅包含列表
+- a
+- b
+- c
+
+[CASE] 108 仅包含引用
+> 引用第一行
+> 引用第二行
+
+[CASE] 109 只有空格换行
+     
+    
+     
+
+[CASE] 110 超长重复emoji
+😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂
+
+[CASE] 111 超长URL
+https://example.com/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+[CASE] 112 超长Markdown链接
+[点我](https://example.com/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa)
+
+[CASE] 113 超长项目列表
+- 项目1
+- 项目2
+- 项目3
+- 项目4
+- 项目5
+- 项目6
+- 项目7
+- 项目8
+- 项目9
+- 项目10
+
+[CASE] 114 超长代码块
+```python
+a = 1
+b = 2
+c = 3
+d = 4
+e = 5
+f = 6
+g = 7
+h = 8
+i = 9
+j = 10
+```
+
+[CASE] 115 中英混合长段落
+今天 meeting 讨论 API 设计，我们决定用 JSON 返回 user.name 和 user.age，然后前端用 React 展示，最后 deploy 到 production，记得 update docs 和 changelog。
+
+[CASE] 116 多句无空格
+第一句。第二句。第三句。第四句。第五句。
+
+[CASE] 117 句末标点缺失
+今天天气不错我们出去走走吧顺便买点水果
+
+[CASE] 118 标点后多空格
+你好。   今天很好。   明天见。
+
+[CASE] 119 多行对话记录
+A: 你到了吗？
+B: 到了。
+A: 好，我马上下来。
+
+[CASE] 120 聊天记录引用
+[10:00] 张三：你好
+[10:01] 李四：你好
+[10:02] 张三：在吗？

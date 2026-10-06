@@ -1,0 +1,10 @@
+# 冻结 v2.0 基线字节：不做任何行尾转换（-text）
+#
+# 本仓库的文本文件行尾本来就不统一：
+#   CRLF —— README.md / HANDOVER.md / Prompt.txt / tests/test.txt / legacy/*.py
+#   LF   —— qikou/*.py / Kaomoji/*.txt / LICENSE
+# 若交给 text=auto 归一化，首次提交就会改写磁盘上已有的字节。
+# 基线阶段以「逐字节可复现」优先，故全部关闭转换。
+# 日后若要统一行尾，请作为一次独立提交专门处理。
+
+* -text

@@ -1,0 +1,38 @@
+# ---------------------------------------------------------------
+# 气口 / Cadence (qikou) —— 忽略规则
+# 原则：只跟踪源码、文档、语料；不跟踪任何生成物。
+# ---------------------------------------------------------------
+
+# Python 字节码与缓存
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 自动测试报告（由 python -m qikou --test 生成，每次带时间戳）
+tests/results/
+
+# 颜文字语料：只跟踪代码实际加载的 kaomojis.txt。
+# 其余 4 个是上游输入法的原始导出数据（gboard / googlejp / msime / ios.plist，
+# 约 13.7 MB），未被任何代码引用，且再分发依据不明确，故保留在本地磁盘但不入库。
+Kaomoji/*
+!Kaomoji/kaomojis.txt
+
+# 打包 / 构建产物
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# 编辑器 / 操作系统
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
