@@ -32,7 +32,7 @@ That is exactly what this project does for AI replies: **find the breath points 
 
 ## Why This Exists
 
-Agent replies tend to be long. Sent as-is to a social platform, they read like an essay. On WeChat, QQ, Discord, or Telegram, real people send messages like this:
+AI replies tend to be long. Sent as-is to a social platform, they read like an essay. On WeChat, QQ, Discord, or Telegram, real people send messages like this:
 
 - one idea per message, 10–40 characters
 - a break after punctuation, with tone particles standing on their own

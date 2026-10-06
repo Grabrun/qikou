@@ -122,7 +122,7 @@ def run_auto_test(path, out_path=None):
 
 
 def read_multiline():
-    print("请输入 Agent 回复（可多行）。")
+    print("请输入 AI 回复（可多行）。")
     print("  结束输入：单独一行输入 EOF，或 Ctrl-D")
     print("  取消    ：Ctrl-C")
     print("-" * 52)
