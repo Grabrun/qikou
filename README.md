@@ -1,4 +1,4 @@
-# 气口 (Qikou)
+# 气口 (Cadence)
 
 **中文** | [English](README_en-US.md)
 

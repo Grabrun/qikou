@@ -1,4 +1,4 @@
-# Qikou (气口) — Cadence
+# Cadence (气口)
 
 **English** | [中文](README.md)
 
@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Qikou (气口, qì kǒu)** is a term from Chinese opera and storytelling. It is the breath point — the spot where a performer pauses mid-passage to take a new breath. A good qikou makes the words land naturally, with rhythm, never running out of air. A bad one leaves the audience behind and gasping.
+**气口 (qìkǒu)** is a term from Chinese opera and storytelling. It is the breath point — the spot where a performer pauses mid-passage to take a new breath. A good qikou makes the words land naturally, with rhythm, never running out of air. A bad one leaves the audience behind and gasping. The English name, **Cadence**, comes from music: the close of a phrase, the rhythm of speech.
 
 That is exactly what this project does for AI replies: **find the breath points in a long reply** — split one long response into several short messages so they read like a real person sending them one after another.
 
@@ -39,7 +39,7 @@ Agent replies tend to be long. Sent as-is to a social platform, they read like a
 - lists, code blocks, and URLs kept intact
 - a human-like delay instead of an instant wall of text
 
-Chopping by character count breaks Markdown, URLs, and code blocks, and reads like a machine. Qikou does **semantics-aware soft splitting**.
+Chopping by character count breaks Markdown, URLs, and code blocks, and reads like a machine. Cadence does **semantics-aware soft splitting**.
 
 ---
 
@@ -350,7 +350,7 @@ Every decision in the splitter is a tradeoff between **semantic completeness** a
 
 ### v2.0 (current)
 
-**Qikou**. Rules plus scoring.
+**Cadence**. Rules plus scoring.
 
 - split into the `qikou` package
 - modularised: patterns / lexicon / config / kaomoji / protect / postprocess / splitter / cli
@@ -399,7 +399,7 @@ It addresses the ceiling of the rule approach:
 
 ## Naming
 
-**气口 (Qikou)** — a term from Chinese opera and storytelling: the spot where a performer breathes and pauses. A good qikou makes a passage land naturally, with rhythm, never out of air; a bad one leaves the listener gasping.
+**气口 (qìkǒu)** — a term from Chinese opera and storytelling: the spot where a performer breathes and pauses. A good qikou makes a passage land naturally, with rhythm, never out of air; a bad one leaves the listener gasping.
 
 The English name is **Cadence** (the close of a musical phrase; the rhythm of speech), and the package name is `qikou`.
 
@@ -408,7 +408,7 @@ Version names:
 | Version | Name | Kernel |
 |---|---|---|
 | v1 | 吐字 (Articulation) | hard rules |
-| v2 | 气口 (Qikou) | rules + scoring |
+| v2 | 气口 (Cadence) | rules + scoring |
 | v3 | 韵律 (Prosody) | LightGBM |
 | v4 | 呼吸 (Breathing) | Transformer |
 
