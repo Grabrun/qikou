@@ -22,6 +22,9 @@ Kaomoji/*
 .prompt/
 Prompt.txt
 
+# 交接文档：只作本地参考，不进 GitHub。
+HANDOVER.md
+
 # 打包 / 构建产物
 build/
 dist/
