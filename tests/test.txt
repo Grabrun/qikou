@@ -1,456 +1,643 @@
-[CASE] 001 中文句号后紧跟英文
-你好。Hello。再见。
+[CASE] 001 单句中文句号
+今天天气很好，我们出去走走吧。
 
-[CASE] 002 中文问号后无空格
-真的吗？为什么？怎么办？
+[CASE] 002 单句中文问号
+你吃饭了吗？
 
-[CASE] 003 感叹号连用后接问号
-太棒了！！！真的吗？？？
+[CASE] 003 单句中文感叹号
+这个真的太棒了！
 
-[CASE] 004 省略号后接句号
-我……。算了。
+[CASE] 004 中文省略号结尾
+我想想啊……
 
-[CASE] 005 省略号与破折号混用
-我——我……那个——算了。
+[CASE] 005 多个句号连续
+好的。。。我知道了
 
-[CASE] 006 波浪号拖音多段
-好呀~没问题~等我一下下~
+[CASE] 006 问号感叹号组合
+真的吗？！太意外了！
 
-[CASE] 007 重复语气词拖音
-嗯嗯嗯嗯嗯，知道了知道了。
+[CASE] 007 感叹号问号组合
+你怎么能这样！？
 
-[CASE] 008 笑声与哭泣混合
-哈哈哈哈哈呜呜呜哈哈哈。
+[CASE] 008 中文分号分隔
+第一，要早睡；第二，要早起。
 
-[CASE] 009 迟疑重复加省略
-那个……那个……就是……嗯……
+[CASE] 009 中文冒号引出
+我有几个建议：多喝水，多运动。
 
-[CASE] 010 强调多标点混合
-真的！！！超级好吃？？？你一定要试试！！！
+[CASE] 010 顿号列举多项
+苹果、香蕉、橘子、葡萄都买了。
 
-[CASE] 011 中英标点混排无空格
-这个功能叫Auto Split.它真的很好用!你觉得呢?
+[CASE] 011 逗号长句无句号
+今天去了超市，买了点东西，然后回家做饭，吃完看了一会儿电视，就准备睡觉了
 
-[CASE] 012 英文缩写句点不拆
-Mr. Smith went to Washington at 3 p.m. He met Dr. Lee.
+[CASE] 012 句号后无空格接句
+你好。今天过得怎么样。
 
-[CASE] 013 URL含点号与查询
-见 https://example.com/a.b/c?d=e.f&g=h 后收藏。
+[CASE] 013 中文引号结尾
+他说“没问题”。
 
-[CASE] 014 Markdown链接带标题
-请查看[官方文档](https://docs.example.com/v1.2 "标题")后再操作。
+[CASE] 014 中文括号结尾
+明天见（如果不下雨的话）。
 
-[CASE] 015 行内代码含点号
-设置 `timeout=3.14` 和 `host=api.example.com` 后重试。
+[CASE] 015 破折号结尾
+我想说的就是——算了。
 
-[CASE] 016 多行代码块点号
-```python
-def split(text):
-    return text.split("。")
+[CASE] 016 波浪号结尾
+好的呀~
+
+[CASE] 017 省略号后接句号
+这个嘛……。不太好说
+
+[CASE] 018 问号省略号组合
+你确定吗……？
+
+[CASE] 019 感叹号省略号组合
+太厉害了……！
+
+[CASE] 020 多句短句组合
+早。吃了吗？我吃了。你呢？
+
+[CASE] 021 排比句列举
+我爱春天，爱夏天，爱秋天，也爱冬天。
+
+[CASE] 022 反问句结尾
+难道不是吗？
+
+[CASE] 023 设问句自答
+什么是幸福？幸福就是知足。
+
+[CASE] 024 双句号误用
+明白了。。好的
+
+[CASE] 025 中英文句号混用
+你好. 我很好。
+
+[CASE] 026 感叹号连续
+太棒了！！！
+
+[CASE] 027 连续多个问号
+真的吗？？？
+
+[CASE] 028 省略号六点
+你等等……
+
+[CASE] 029 句末带语气词
+走吧，好不好嘛。
+
+[CASE] 030 无标点长句中文
+今天早上起来发现外面下雨了所以我决定不出门在家看电影然后做了一顿好吃的
+
+[CASE] 031 英文单句句号
+I think we should go now.
+
+[CASE] 032 英文单句问号
+Are you sure about that?
+
+[CASE] 033 英文单句感叹号
+That's amazing!
+
+[CASE] 034 英文省略号
+Well, I'm not sure...
+
+[CASE] 035 英文多句组合
+Hello. How are you? I'm fine.
+
+[CASE] 036 英文逗号长句
+I went to the store, bought some milk, and then came home.
+
+[CASE] 037 英文缩写句号
+Mr. Smith went to Washington.
+
+[CASE] 038 英文引号结尾
+He said "I'll be there."
+
+[CASE] 039 英文括号结尾
+See you tomorrow (if it doesn't rain).
+
+[CASE] 040 中英混排句号
+我今天看了一部电影叫 Inception，很好看。
+
+[CASE] 041 中英混排问号
+你确定这是 OK 的吗？
+
+[CASE] 042 中英混排感叹号
+这个也太 amazing 了吧！
+
+[CASE] 043 中英混排无空格
+我今天用Python写了一个script感觉还不错
+
+[CASE] 044 中英混排有空格
+今天 meeting 时间改到下午三点了
+
+[CASE] 045 英文全大写
+THIS IS VERY IMPORTANT!
+
+[CASE] 046 英文首字母大写
+Hello world. This is a test.
+
+[CASE] 047 英文省略号与逗号
+Well, you know, I was thinking...
+
+[CASE] 048 中英标点混用
+你好, 我很好. 你呢?
+
+[CASE] 049 英文分号分隔
+I have a cat; she is very cute.
+
+[CASE] 050 英文冒号引出
+Here's what I think: we should wait.
+
+[CASE] 051 英文破折号
+I was going to say—never mind.
+
+[CASE] 052 英文波浪号
+Okay~
+
+[CASE] 053 中英数字混排
+我有 3 个 apple 和 5 个 banana。
+
+[CASE] 054 英文换行分句
+Hello there.
+How are you doing today?
+
+[CASE] 055 中英混排多句
+今天天气不错。Let's go out. 你觉得呢？
+
+[CASE] 056 英文问句加中文
+Really? 真的假的？
+
+[CASE] 057 中文加英文感叹
+太好了 great！
+
+[CASE] 058 英文逗号无空格
+I'm fine,don't worry.
+
+[CASE] 059 中英混排逗号结尾
+我今天买了 coffee, 然后去了 park,
+
+[CASE] 060 英文无标点长句
+I think we should probably wait a bit before making any decision
+
+[CASE] 061 拖音啊啊啊
+啊啊啊啊啊太开心了
+
+[CASE] 062 拖音哈哈哈
+哈哈哈哈哈笑死我了
+
+[CASE] 063 拖音嗯嗯嗯
+嗯嗯嗯我知道了
+
+[CASE] 064 拖音哦哦哦
+哦哦哦原来是这样
+
+[CASE] 065 拖音呃迟疑
+呃……那个……我忘了
+
+[CASE] 066 迟疑语气表达
+嗯……让我想想……应该是可以的
+
+[CASE] 067 重复词语强调
+真的真的真的超级好吃
+
+[CASE] 068 叠词强调表达
+慢慢来，不要急急的
+
+[CASE] 069 连续感叹语气
+哇！好厉害！太强了！
+
+[CASE] 070 撒娇语气表达
+好不好嘛~求求你了~
+
+[CASE] 071 无奈叹气语气
+唉，算了，随你吧。
+
+[CASE] 072 惊讶语气表达
+天呐！不会吧！
+
+[CASE] 073 生气语气表达
+你怎么可以这样！！！太过分了！
+
+[CASE] 074 开心语气表达
+嘿嘿，今天真开心呀
+
+[CASE] 075 害羞迟疑语气
+那个……其实……我有点喜欢你
+
+[CASE] 076 拖音波浪号
+好哒~~~没问题~~~
+
+[CASE] 077 重复标点强调
+重要的事情说三遍！！！
+
+[CASE] 078 语气词结尾
+走吧走吧，快点啦
+
+[CASE] 079 口语化短句
+行吧。就这样。拜拜。
+
+[CASE] 080 自言自语式表达
+我是不是忘了什么……哦对，钥匙！
+
+[CASE] 081 拖音重复字
+等等等等，我马上来
+
+[CASE] 082 强调大写英文
+这个真的 VERY 重要
+
+[CASE] 083 重复问号加感叹
+你确定？？！不是吧！
+
+[CASE] 084 迟疑省略号
+我……我也不知道该怎么说……
+
+[CASE] 085 撒娇拖音表达
+不要嘛~~~再玩一会儿嘛~~~
+
+[CASE] 086 开心拖音表达
+耶~~~成功了~~~
+
+[CASE] 087 无语省略号
+。。。。。。你赢了
+
+[CASE] 088 叹气语气表达
+哎……好累啊……
+
+[CASE] 089 惊呼感叹表达
+哇塞！这也太酷了吧！
+
+[CASE] 090 小声嘀咕表达
+（小声）其实我觉得不太行
+
+[CASE] 091 单个表情结尾
+今天真开心😊
+
+[CASE] 092 多个表情符号
+太好吃了😋🍜👍
+
+[CASE] 093 表情在句中
+我😭真的不行了
+
+[CASE] 094 颜文字开心
+今天心情不错 (＾▽＾)
+
+[CASE] 095 颜文字哭泣
+呜呜呜 (╥﹏╥)
+
+[CASE] 096 颜文字生气
+(╯°□°）╯︵ ┻━┻
+
+[CASE] 097 符号表情笑脸
+:) 好的呀
+
+[CASE] 098 文字表情符号
+哈哈哈哈笑死 [笑cry]
+
+[CASE] 099 表情与中文混排
+收到👌谢谢啦🙏
+
+[CASE] 100 特殊符号堆
+★☆★☆★ 好看吗
+
+[CASE] 101 箭头符号分隔
+第一步 → 第二步 → 第三步
+
+[CASE] 102 数学等式符号
+1+1=2，很简单吧
+
+[CASE] 103 货币符号混排
+这个东西 $20，那个 €15
+
+[CASE] 104 版权符号标记
+© 2024 版权所有
+
+[CASE] 105 商标符号标记
+这是 iPhone™ 的新功能
+
+[CASE] 106 度数符号温度
+今天 35°C，好热
+
+[CASE] 107 分数符号表达
+我吃了 1/2 个蛋糕
+
+[CASE] 108 星号强调标记
+这是 *重点* 内容
+
+[CASE] 109 井号话题标签
+#话题# 今天天气真好
+
+[CASE] 110 at符号提及
+@小明 你怎么看？
+
+[CASE] 111 下划线测试
+这是 _下划线_ 测试
+
+[CASE] 112 波浪号范围
+大概 3~5 天吧
+
+[CASE] 113 竖线分隔选项
+选项A | 选项B | 选项C
+
+[CASE] 114 反斜杠路径
+路径是 C:\Users\test
+
+[CASE] 115 正斜杠日期
+日期 2024/01/01
+
+[CASE] 116 冒号括号组合
+注意：这是重点（真的）
+
+[CASE] 117 中括号标注
+[重要] 请及时回复
+
+[CASE] 118 大括号变量
+变量 {name} 需要替换
+
+[CASE] 119 尖括号标签
+请点击 <按钮> 确认
+
+[CASE] 120 省略号符号
+……无语了……
+
+[CASE] 121 无序列表短项
+- 苹果
+- 香蕉
+- 橘子
+
+[CASE] 122 无序列表长项
+- 第一点是比较重要的内容
+- 第二点也很关键
+- 第三点需要注意
+
+[CASE] 123 有序列表步骤
+1. 先打开设置
+2. 然后点击选项
+3. 最后保存
+
+[CASE] 124 有序列表数字重复
+1. 第一步
+1. 第二步
+1. 第三步
+
+[CASE] 125 嵌套列表结构
+- 水果
+  - 苹果
+  - 香蕉
+- 蔬菜
+  - 白菜
+
+[CASE] 126 引用块内容
+> 这是引用内容
+> 第二行引用
+
+[CASE] 127 引用块加粗
+> **注意**：这里要小心
+
+[CASE] 128 行内代码片段
+使用 `console.log()` 输出
+
+[CASE] 129 短代码块
+```js
+console.log("hi")
 ```
-这段代码很简单。
 
-[CASE] 017 无序列表多行
-- 第一步：打开设置
-- 第二步：选择账号
-- 第三步：保存退出
+[CASE] 130 代码块多行
+```python
+def hello():
+    print("hello")
+```
 
-[CASE] 018 有序列表多行
-1. 先登录系统
-2. 然后进入控制台
-3. 最后创建实例
+[CASE] 131 代码块含中文注释
+```python
+# 打印问候
+print("你好")
+```
 
-[CASE] 019 嵌套无序列表结构
-- 前端
-  - React
-  - Vue
-- 后端
-  - Node
-  - Go
+[CASE] 132 Markdown链接
+[点击这里](https://example.com)
 
-[CASE] 020 任务列表勾选状态
-- [x] 已完成
-- [ ] 未完成
-- [ ] 待确认
+[CASE] 133 链接带标题
+[Google](https://google.com "搜索")
 
-[CASE] 021 引用块多行
-> 这是引用第一行
-> 这是引用第二行
-> 引用结束后继续聊天。
+[CASE] 134 Markdown图片
+![图片](https://example.com/a.png)
 
-[CASE] 022 嵌套引用块结构
-> 外层引用
->> 内层引用
-> 回到外层
+[CASE] 135 粗体文字标记
+这是 **粗体** 文字
 
-[CASE] 023 加粗斜体混用
-这是**重点内容**，也是*斜体内容*，不要拆坏标记。
+[CASE] 136 斜体文字标记
+这是 *斜体* 文字
 
-[CASE] 024 删除线高亮
-这是~~删除线~~和==高亮==内容。
+[CASE] 137 粗斜体文字
+这是 ***粗斜体*** 文字
 
-[CASE] 025 Markdown表格
+[CASE] 138 删除线文字
+这是 ~~删除~~ 文字
+
+[CASE] 139 一级标题标记
+# 大标题
+
+[CASE] 140 二级标题标记
+## 二级标题
+
+[CASE] 141 三级标题标记
+### 三级标题
+
+[CASE] 142 分割线减号
+---
+
+[CASE] 143 分割线星号
+***
+
+[CASE] 144 Markdown表格
 | 名称 | 数量 |
 | --- | --- |
 | 苹果 | 3 |
-| 香蕉 | 5 |
 
-[CASE] 026 Emoji连续表情
-今天心情超好 😀😀😀 明天也要加油 💪💪💪
+[CASE] 145 任务列表勾选
+- [x] 已完成
+- [ ] 未完成
 
-[CASE] 027 肤色与组合emoji
-你好👋🏽，这是👨‍👩‍👧‍👦家庭，旗帜🇨🇳。
+[CASE] 146 混合Markdown标记
+**重点**：请查看 `代码` 和 [链接](https://a.com)
 
-[CASE] 028 键帽与符号emoji
-按 1️⃣ 或 #️⃣ 选择，然后点 ✅。
+[CASE] 147 行内代码含反引号
+使用 `` `code` `` 表示
 
-[CASE] 029 颜文字表情
-别生气啦 (╯°□°）╯︵ ┻━┻ 我错了嘛。
+[CASE] 148 代码块含空行
+```js
+let a = 1
 
-[CASE] 030 网络用语缩写
-这个操作真的 yyds，xswl，绝绝子。
+let b = 2
+```
 
-[CASE] 031 极短单字回复
+[CASE] 149 引用嵌套结构
+> 外层
+>> 内层
+
+[CASE] 150 裸URL链接
+https://example.com/path?q=1
+
+[CASE] 151 裸URL长路径
+https://example.com/very/long/path/that/keeps/going/and/going
+
+[CASE] 152 列表带链接
+- [文档](https://docs.com)
+- [教程](https://tutorial.com)
+
+[CASE] 153 加粗加列表
+- **第一**：内容
+- **第二**：内容
+
+[CASE] 154 代码块前后文字
+这是示例：
+```js
+let x = 1
+```
+结束。
+
+[CASE] 155 行内代码与中文
+运行 `npm install` 安装依赖
+
+[CASE] 156 极短单字输入
 好
 
-[CASE] 032 空白字符与换行
-  	 
-   
-	
+[CASE] 157 极短词语输入
+好的
 
-[CASE] 033 纯标点堆叠
-。。。。。。。。。。。。。。
+[CASE] 158 极短英文输入
+ok
 
-[CASE] 034 符号堆叠混合
-！！！？？？……！！！？？？
+[CASE] 159 极短符号输入
+？
 
-[CASE] 035 键盘乱打串
-asdkjfhaskjdfh qweoruwoieu zxcmnv,zxcmnv。
+[CASE] 160 极短表情输入
+👍
 
-[CASE] 036 无标点长句
-我今天去了超市然后买了很多东西有苹果香蕉橙子还有牛奶面包最后回家做饭吃
+[CASE] 161 极长无标点中文
+今天天气很好我出门买了很多东西有苹果香蕉橘子和葡萄然后回家做了一顿丰盛的晚餐吃完之后看了一会儿电视就睡觉了感觉这一天过得很充实希望明天也能这样
 
-[CASE] 037 超长无断点字母
-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+[CASE] 162 极长无标点英文
+I think we should probably wait a bit before making any decision because there are many things to consider and we dont want to rush into anything that we might regret later on
 
-[CASE] 038 重复句子堆叠
-好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的好的
+[CASE] 163 重复词语堆叠
+好好好好好好好好好好
 
-[CASE] 039 多空行分隔
+[CASE] 164 重复句子堆叠
+我爱你我爱你我爱你我爱你我爱你
+
+[CASE] 165 重复感叹号
+！！！！！！！！！！！！
+
+[CASE] 166 连续重复问号
+？？？？？？？？？？？？
+
+[CASE] 167 重复省略号
+…………………………………………
+
+[CASE] 168 重复表情符号
+😀😀😀😀😀😀😀😀😀😀
+
+[CASE] 169 多个连续换行
+你好
+
+
+再见
+
+[CASE] 170 大量连续空格
+你好          世界
+
+[CASE] 171 长句逗号多
+今天早上我起床后先刷牙然后洗脸然后吃早饭然后出门坐地铁然后到公司然后开始工作然后中午吃饭然后继续工作然后下班回家
+
+[CASE] 172 长英文逗号句
+I woke up, brushed my teeth, washed my face, had breakfast, left home, took the subway, arrived at the office, started working, had lunch, worked more, and went home.
+
+[CASE] 173 单字重复加标点
+好。好。好。好。好。
+
+[CASE] 174 超长英文单词
+supercalifragilisticexpialidocioussupercalifragilisticexpialidocious
+
+[CASE] 175 长串连续数字
+1234567890123456789012345678901234567890
+
+[CASE] 176 乱打英文字母
+asdkfjalsdkjfalsdkjf
+
+[CASE] 177 乱打中文字符
+阿萨德发的萨芬阿萨德
+
+[CASE] 178 包含错别字
+今天天汽很好，我门出去玩吧
+
+[CASE] 179 拼音输入文本
+jintian tianqi henhao women chuqu wan ba
+
+[CASE] 180 符号堆叠输入
+!@#$%^&*()_+-=[]{}|;':",./<>?
+
+[CASE] 181 混合乱打字符
+abc123!@#你好？？？
+
+[CASE] 182 空行分隔两段
 第一段内容。
-
 
 第二段内容。
 
+[CASE] 183 多个连续空行
+第一行
 
-第三段内容。
 
-[CASE] 040 缩进代码片段
-    if a > b:
-        print("a.b")
-        return a
+第三行
 
-[CASE] 041 LaTeX行内公式
-公式是 $E = mc^2$，还有 $$a.b = c.d$$，不要拆开。
+[CASE] 184 行首空格缩进
+    这是缩进的内容
 
-[CASE] 042 LaTeX块公式
-$$
-\int_0^1 x^2 dx = \frac{1}{3}
-$$
-请计算。
+[CASE] 185 行尾多余空格
+你好   
 
-[CASE] 043 话题标签与提及
-#今日话题# 今天@小明 也来了，大家怎么看？
-
-[CASE] 044 电话号码日期时间
-联系电话 138-1234-5678，日期 2024.12.31，时间 23:59。
-
-[CASE] 045 版本号与小数
-升级到 v1.2.3，阈值设为 0.75，兼容 Python 3.11。
-
-[CASE] 046 文件路径反斜杠
-路径是 C:\Users\Test\Documents\a.b.txt，请确认。
-
-[CASE] 047 英文缩写列表
-We need apples, oranges, etc. Then we can go, e.g. tomorrow.
-
-[CASE] 048 引号内句号
-他说：“今天不去了。”然后转身离开。
-
-[CASE] 049 括号内句号
-这是补充说明（比如价格、时间等。）后面继续。
-
-[CASE] 050 破折号连接
-我本来想说的——但是又忘了——算了不说了。
-
-[CASE] 051 分号分隔长句
-我喜欢苹果；你喜欢香蕉；他喜欢橙子；大家口味不同。
-
-[CASE] 052 冒号后接列表
-需要准备：身份证、银行卡、手机号，以及复印件。
-
-[CASE] 053 书名号内容
-我最近在看《三体》。里面提到《黑暗森林》法则。
-
-[CASE] 054 HTML标签换行
-你好<br>这是第二行<br/>这是第三行。
-
-[CASE] 055 零宽字符夹杂
-这​是​一​段​带​零​宽​空​格​的​文​字。
-
-[CASE] 056 全角半角混用
-ＡＢＣ１２３，abc123。全角，半角,混用.
-
-[CASE] 057 中日韩混排
-你好，こんにちは，안녕하세요。今天天气不错。
-
-[CASE] 058 中英混排长句
-这个 API 返回 JSON，里面包含 user.name 和 user.age，请解析后展示。
-
-[CASE] 059 数字单位连写
-体重 65.5kg，身高 175cm，距离 3.2km，用时 1h30min。
-
-[CASE] 060 表情后接文字
-😊好的👌我马上处理📎附件记得查收✅
-
-[CASE] 061 邮箱地址标点
-请联系 test.user+tag@example.co.uk，谢谢。
-
-[CASE] 062 IP与端口
-服务器 192.168.1.1:8080 和 10.0.0.2:443 都要检查。
-
-[CASE] 063 货币金额格式
-总价 $1,234.56，折扣 ¥789.00，税率 8.5%。
-
-[CASE] 064 百分比范围
-增长 10%-20%，置信区间 95%～99%，误差 ±0.5。
-
-[CASE] 065 Markdown图片
-![截图](https://example.com/a.b.png "标题") 请查看。
-
-[CASE] 066 Markdown脚注
-这里有个脚注[^1]，后面还有[^note]。
-
-[^1]: 脚注内容。
-[^note]: 另一个脚注。
-
-[CASE] 067 水平线与分隔
-第一段
----
-第二段
-***
-第三段
-
-[CASE] 068 Markdown转义字符
-这是 \*不是斜体\*，这是 \[不是链接\]。
-
-[CASE] 069 YAML配置
-name: test
-version: 1.2.3
-items:
-  - a
-  - b
-
-[CASE] 070 JSON对象
-{"name":"张三","age":30,"city":"北京","score":95.5}
-
-[CASE] 071 XML片段
-<user id="1"><name>张三</name><age>30</age></user>
-
-[CASE] 072 SQL语句
-SELECT id, name FROM users WHERE age > 18 ORDER BY created_at DESC;
-
-[CASE] 073 俄语中文混排
-Привет, 你好! Как дела? 我很好。
-
-[CASE] 074 阿拉伯语混排
-مرحبا، 你好。كيف حالك？ 我很好。
-
-[CASE] 075 希伯来语混排
-שלום, 你好! מה שלומך? 我很好。
-
-[CASE] 076 泰语中文混排
-สวัสดี 你好! สบายดีไหม? 我很好。
-
-[CASE] 077 越南语混排
-Xin chào 你好! Bạn khỏe không? 我很好。
-
-[CASE] 078 法语中文混排
-Bonjour, 你好! Ça va? 我很好。
-
-[CASE] 079 德语中文混排
-Hallo, 你好! Wie geht's? 我很好。
-
-[CASE] 080 西班牙语混排
-Hola, 你好! ¿Qué tal? 我很好。
-
-[CASE] 081 代码块含空行
-```js
-const a = 1;
-
-const b = 2;
-```
-结束。
-
-[CASE] 082 代码块含标点
-```bash
-echo "hello.world"; ls -la | grep ".txt"
-```
-结束。
-
-[CASE] 083 行内代码含URL
-访问 `https://example.com/a.b?c=d` 即可。
-
-[CASE] 084 链接带括号
-参见 [链接](https://example.com/a_(b).c) 说明。
-
-[CASE] 085 链接带锚点
-打开 https://example.com/page#section.1 查看。
-
-[CASE] 086 链接被标点包围
-请看(https://example.com/a.b)。然后继续。
-
-[CASE] 087 数学公式与标点
-当 $x=1.5$ 时，$y=2.5$；否则 $y=0$。
-
-[CASE] 088 化学式与箭头
-反应式 2H₂ + O₂ → 2H₂O，条件点燃。
-
-[CASE] 089 温度单位符号
-温度从 36.5°C 升到 37.2°C，注意观察。
-
-[CASE] 090 时间范围连接符
-会议 09:30-11:00，午休 12:00~13:00。
-
-[CASE] 091 省略号在引号内
-他说：“我……不知道……”然后沉默。
-
-[CASE] 092 感叹问号组合
-真的吗？！不会吧？！太离谱了！？
-
-[CASE] 093 连续波浪拖音
-好~~~啦~~~知~~~道~~~了~~~
-
-[CASE] 094 重复标点后文字
-好的。。。。。。那就这样吧。
-
-[CASE] 095 错别字与口语
-我以经吃过了，在等等他，他马山就来。
-
-[CASE] 096 拼音中文混排
-wo men 今天 qu 公园，hao 不好？
-
-[CASE] 097 火星文网络变体
-莪們嘟茬，妳恏嗎？莪佷恏。
-
-[CASE] 098 繁体中文文本
-今天天氣很好。我們去走走，順便買點水果。
-
-[CASE] 099 竖排标点符号
-你好︒今天很好︒明天见︒
-
-[CASE] 100 制表符分隔
+[CASE] 186 制表符分隔内容
 姓名	年龄	城市
-张三	30	北京
-李四	25	上海
 
-[CASE] 101 CRLF换行
-第一行\r\n第二行\r\n第三行
+[CASE] 187 全角空格分隔
+你好　　世界
 
-[CASE] 102 BOM开头
-﻿开头有BOM的文本。后面继续。
+[CASE] 188 零宽字符插入
+你好​世界
 
-[CASE] 103 控制字符夹杂
-这里有个控制字符：\x01 后面继续。
+[CASE] 189 特殊Unicode字符
+𝓗𝓮𝓵𝓵𝓸 你好
 
-[CASE] 104 只有emoji
-😀😀😀😀😀😀😀😀😀😀
+[CASE] 190 罗马数字序列
+I II III IV V
 
-[CASE] 105 仅包含链接
-https://example.com/a.b/c?d=e.f
+[CASE] 191 希腊字母序列
+α β γ δ ε
 
-[CASE] 106 仅包含代码块
-```
-a.b.c
-d.e.f
-```
+[CASE] 192 俄语中文混排
+Привет 你好
 
-[CASE] 107 仅包含列表
-- a
-- b
-- c
+[CASE] 193 日语中文混排
+こんにちは 你好
 
-[CASE] 108 仅包含引用
-> 引用第一行
-> 引用第二行
+[CASE] 194 韩语中文混排
+안녕하세요 你好
 
-[CASE] 109 只有空格换行
-     
-    
-     
+[CASE] 195 阿拉伯语中文混排
+مرحبا 你好
 
-[CASE] 110 超长重复emoji
-😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂
+[CASE] 196 表情符号组合
+👨‍👩‍👧‍👦 一家人
 
-[CASE] 111 超长URL
-https://example.com/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+[CASE] 197 肤色表情符号
+👍🏽 好的
 
-[CASE] 112 超长Markdown链接
-[点我](https://example.com/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa)
+[CASE] 198 旗帜表情符号
+🇨🇳 🇺🇸 🇯🇵
 
-[CASE] 113 超长项目列表
-- 项目1
-- 项目2
-- 项目3
-- 项目4
-- 项目5
-- 项目6
-- 项目7
-- 项目8
-- 项目9
-- 项目10
+[CASE] 199 键位符号组合
+⌘ + C 复制
 
-[CASE] 114 超长代码块
-```python
-a = 1
-b = 2
-c = 3
-d = 4
-e = 5
-f = 6
-g = 7
-h = 8
-i = 9
-j = 10
-```
-
-[CASE] 115 中英混合长段落
-今天 meeting 讨论 API 设计，我们决定用 JSON 返回 user.name 和 user.age，然后前端用 React 展示，最后 deploy 到 production，记得 update docs 和 changelog。
-
-[CASE] 116 多句无空格
-第一句。第二句。第三句。第四句。第五句。
-
-[CASE] 117 句末标点缺失
-今天天气不错我们出去走走吧顺便买点水果
-
-[CASE] 118 标点后多空格
-你好。   今天很好。   明天见。
-
-[CASE] 119 多行对话记录
-A: 你到了吗？
-B: 到了。
-A: 好，我马上下来。
-
-[CASE] 120 聊天记录引用
-[10:00] 张三：你好
-[10:01] 李四：你好
-[10:02] 张三：在吗？
-
-[CASE] 121 未闭合左括号不阻断切分
-（参见图 1 首先你需要确定目标，比如三个月内学会 Python。然后每天安排三十分钟练习基础语法。接着做一个小项目，比如爬虫或自动化脚本。最后定期复习并调整计划。
-
-[CASE] 122 孤立星号不阻断切分
-计算 3 * 4 得出结果。然后继续下一步。最后做一次复查。
-
-[CASE] 123 未闭合左引号不阻断切分
-他说“我们明天出发。带上装备。路上小心。
+[CASE] 200 换行符混合
+第一行\n第二行\r\n第三行
