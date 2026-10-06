@@ -12,10 +12,13 @@ __pycache__/
 tests/results/
 
 # 颜文字语料：只跟踪代码实际加载的 kaomojis.txt。
-# 其余 4 个是上游输入法的原始导出数据（gboard / googlejp / msime / ios.plist，
-# 约 13.7 MB），未被任何代码引用，且再分发依据不明确，故保留在本地磁盘但不入库。
+# 其余 4 个（gboard / googlejp / msime / ios.plist，约 13.7 MB）未被任何代码
+# 引用，来源与再分发依据尚待确认，故保留在本地磁盘但不入库。
 Kaomoji/*
 !Kaomoji/kaomojis.txt
+
+# 个人使用、与项目无关的辅助文件：保留在本地磁盘，不入库
+Prompt.txt
 
 # 打包 / 构建产物
 build/

@@ -150,7 +150,13 @@ python -m qikou
 python -m qikou --test
 ```
 
-会读取 `tests/test.txt`，跑全部用例，结果写入 `tests/results/test_result_<时间戳>.txt`。
+会读取 `tests/test.txt`，跑全部用例，结果写入 `tests/results/test_result_<时间戳>.txt`，然后与快照基线 `tests/baseline.json` 逐用例比对：条数或内容的任何变化都会被指出来，有差异时退出码为 1。
+
+```bash
+python -m qikou --test --update-baseline
+```
+
+确认变化符合预期后，用它重写基线。用例文件里只有输入、没有预期输出，**基线是这个项目唯一的回归防线**——改代码后请跑一次 `--test`，看清楚每个变化再决定是否固化。
 
 ```
 开始自动测试：.../tests/test.txt
@@ -230,7 +236,7 @@ msgs, cfg = split_reply("hello world. how are you?")
 | `max_chars` | 60 | 单条硬上限。超过触发切分 |
 | `target_chars` | 20 | 理想长度。切点优选位置 |
 | `min_chars` | 4 | 低于此长度尝试与相邻合并 |
-| `max_messages` | 6 | 最多几条。超限合并最短相邻对 |
+| `max_messages` | 6 | 条数上限（**软**）。超限合并最短相邻对 |
 | `atomic_merge_prefix` | 20 | 短前缀 + 超长原子片段合并的阈值 |
 | `merge_max_chars` | 60 | 合并后单条上限（不随 scale 放大） |
 | `base_ms` | 500 | 拟人延迟基础值 |
@@ -238,6 +244,8 @@ msgs, cfg = split_reply("hello world. how are you?")
 | `jitter_ms` | 200 | 随机抖动 |
 | `min_ms` | 300 | 最小延迟 |
 | `max_ms` | 1800 | 最大延迟 |
+
+**`max_messages` 是软上限**：列表项、标题、表格、水平线、独立代码块 / URL、以波浪号结尾的条目都不参与合并，所以最终条数可能超过这个值。
 
 **长度自适应**：`split_reply()` 会根据总长自动放宽 `max_chars`：
 
@@ -271,7 +279,7 @@ Hello. How are you?
 - 内容直到下一个 `[CASE]` 或文件末尾
 - 纯空白用例会被保留（结果 0 条），用于测试边界
 
-想加新用例，直接编辑文件即可。
+想加新用例，直接编辑文件即可。新增或修改用例后，`--test` 会把它标为「新增」或「变化」，确认输出正确后再用 `--update-baseline` 固化。
 
 ---
 
@@ -290,11 +298,12 @@ qikou/
 │   ├── protect.py              # 特殊片段保护
 │   ├── postprocess.py          # 后处理
 │   └── splitter.py             # 核心切分逻辑
-├── kaomoji/
+├── Kaomoji/
 │   └── kaomojis.txt            # 颜文字表
 ├── tests/
 │   ├── test.txt                # 测试用例
-│   └── results/                # 测试报告
+│   ├── baseline.json           # 快照基线：每个用例的期望切分结果
+│   └── results/                # 测试报告（自动生成）
 ├── legacy/                     # 旧版存档
 │   ├── ChatSplit-v1.0.py
 │   └── ChatSplit-v2.0.py

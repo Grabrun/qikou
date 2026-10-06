@@ -7,18 +7,29 @@ import time
 
 _END = '\x00'
 
+# 语料位置。目录名与磁盘保持一致（首字母大写），并集中在这里定义，
+# 避免调用方各自拼路径。历史上代码写的是小写 'kaomoji'，在
+# Windows 上被大小写不敏感的文件系统掩盖，Linux/macOS 上会静默加载 0 条。
+KAOMOJI_DIR = 'Kaomoji'
+KAOMOJI_FILE = 'kaomojis.txt'
+
 _state = {
     'trie': {},
     'count': 0,
 }
 
 
+def default_path():
+    """返回默认语料文件的绝对路径。"""
+    here = os.path.dirname(os.path.abspath(__file__))
+    root = os.path.dirname(here)
+    return os.path.join(root, KAOMOJI_DIR, KAOMOJI_FILE)
+
+
 def load_kaomojis(path=None):
     """从文件加载颜文字到 Trie。返回去重后的条目数。"""
     if path is None:
-        here = os.path.dirname(os.path.abspath(__file__))
-        root = os.path.dirname(here)
-        path = os.path.join(root, 'kaomoji', 'kaomojis.txt')
+        path = default_path()
 
     trie = {}
     count = 0

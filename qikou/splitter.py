@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """气口 v2.0 核心切分逻辑。"""
 
+import copy
 import re
 
 from . import kaomoji
@@ -26,22 +27,34 @@ from .postprocess import postprocess_message
 
 # ============================================================
 # 成对符号状态
+#
+# 判断 pos 是否落在"未闭合的标记内"时，除了看 pos 之前是否欠一个闭合，
+# 还要求 pos 之后确实还有机会闭合。否则一个漏打的左括号或一个孤立的
+# 星号会否决其后的每一个候选切点，把整段回复挤成一条——这与产品目标
+# 正好相反（见 tests/test.txt 用例 121、122）。真实的括注与强调总是
+# 配得上对的，配不上的就是笔误。
 # ============================================================
+
+def _has_partner(text, pos, token):
+    """pos 之后是否还会出现 token，即当前未闭合的标记还有没有机会配对。"""
+    return text.find(token, pos) >= 0
+
+
+def _has_any(text, pos, chars):
+    """pos 之后是否出现 chars 中的任一字符。"""
+    tail = text[pos:]
+    return any(c in tail for c in chars)
+
 
 def in_md_span(text, pos):
     before = text[:pos]
-    if before.count('**') % 2 == 1:
-        return True
-    if before.count('__') % 2 == 1:
-        return True
-    if before.count('~~') % 2 == 1:
-        return True
-    if before.count('`') % 2 == 1:
-        return True
+    for token in ('**', '__', '~~', '`'):
+        if before.count(token) % 2 == 1 and _has_partner(text, pos, token):
+            return True
     stripped = before.replace('**', '').replace('__', '').replace('~~', '')
-    if stripped.count('*') % 2 == 1:
+    if stripped.count('*') % 2 == 1 and _has_partner(text, pos, '*'):
         return True
-    if stripped.count('_') % 2 == 1:
+    if stripped.count('_') % 2 == 1 and _has_partner(text, pos, '_'):
         return True
     return False
 
@@ -55,14 +68,11 @@ def in_unclosed_bracket(text, pos):
         elif c in CLOSE_BRACKETS:
             if depth > 0:
                 depth -= 1
-    if depth > 0:
+    if depth > 0 and _has_any(text, pos, CLOSE_BRACKETS):
         return True
-    if before.count('“') > before.count('”'):
-        return True
-    if before.count('「') > before.count('」'):
-        return True
-    if before.count('『') > before.count('』'):
-        return True
+    for op, cl in (('“', '”'), ('「', '」'), ('『', '』')):
+        if before.count(op) > before.count(cl) and cl in text[pos:]:
+            return True
     return False
 
 
@@ -517,8 +527,10 @@ def enforce_max_messages(msgs, cfg, blocks):
 # ============================================================
 
 def split_reply(text, cfg=None):
-    if cfg is None:
-        cfg = Config()
+    # 不原地改写调用方传入的 Config：长度自适应会放大 max_chars /
+    # target_chars / max_messages，若直接改这个对象，同一个 Config 复用
+    # 多次时会单调放宽，且与"无副作用"的约定冲突。
+    cfg = Config() if cfg is None else copy.copy(cfg)
 
     text = text.strip()
     if not text:

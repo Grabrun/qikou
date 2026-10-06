@@ -154,7 +154,13 @@ The header of each block is `[index/total]  <character count> 字`; the timeline
 python -m qikou --test
 ```
 
-Reads `tests/test.txt`, runs every case, and writes the report to `tests/results/test_result_<timestamp>.txt`.
+Reads `tests/test.txt`, runs every case, writes the report to `tests/results/test_result_<timestamp>.txt`, then compares every case against the snapshot baseline `tests/baseline.json`. Any change in message count or content is reported, and the exit code is 1 when something differs.
+
+```bash
+python -m qikou --test --update-baseline
+```
+
+Rewrites the baseline, once you have confirmed the changes are the ones you wanted. The case file holds inputs only, so **the baseline is this project's only regression net** — after touching the splitter, run `--test` and read every difference before accepting it.
 
 ```
 开始自动测试：.../tests/test.txt
@@ -254,7 +260,7 @@ Every parameter of the `Config` class:
 
 To shift the overall feel (choppier or longer), change `max_chars` and `target_chars`.
 
-Note that `split_reply()` scales the `Config` instance it is given, in place. Pass a copy if you need to reuse the same object across calls.
+`split_reply()` never modifies the `Config` you pass in; the scaled copy it returns is the one to use for delays.
 
 ---
 
@@ -279,7 +285,7 @@ Hello. How are you?
 
 To add a case, just edit the file.
 
-Cases hold **inputs only** — there are no expected outputs. `--test` is therefore a deterministic report generator rather than an assertion suite: it fails only if a case raises. Read the reports, or diff them, to catch behaviour changes.
+Cases hold **inputs only** — there are no expected outputs in this file. The expected outputs live in the snapshot baseline `tests/baseline.json`, which `--test` compares against on every run.
 
 ---
 
@@ -301,13 +307,13 @@ qikou/
 ├── Kaomoji/
 │   └── kaomojis.txt            # kaomoji corpus, 55,213 entries
 ├── tests/
-│   ├── test.txt                # 120 test cases
+│   ├── test.txt                # test cases (inputs only)
+│   ├── baseline.json           # snapshot baseline: expected output per case
 │   └── results/                # generated reports (not tracked)
 ├── legacy/                     # archived single-file versions
 │   ├── ChatSplit-v1.0.py
 │   └── ChatSplit-v2.0.py
 ├── HANDOVER.md                 # handover notes (Chinese)
-├── Prompt.txt                  # prompt used to generate the test cases (Chinese)
 ├── README.md                   # Chinese README
 ├── README_en-US.md             # this file
 └── LICENSE                     # MIT
