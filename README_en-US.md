@@ -422,8 +422,8 @@ Each version is another step towards learning how to breathe.
 
 ### Note on the kaomoji data
 
-The kaomoji corpus in `Kaomoji/kaomojis.txt` comes from exported data of publicly available input methods.
+The kaomoji corpus in `Kaomoji/kaomojis.txt` was collected from **https://kaomojis.jp**.
 
-Each kaomoji is a combination of symbols and belongs to the public domain as a form of expression; it is not a copyrightable original work. The collection, merging, and de-duplication of the corpus was done by this project.
+A kaomoji is a combination of symbols and normally does not constitute a copyrightable original work. Terms of use differ between sources, however, so this project makes no legal warranty regarding the redistribution of the corpus.
 
-If an upstream data provider objects to the redistribution of the corpus, please reach out through a GitHub Issue and we will adjust promptly.
+If a rights holder considers the inclusion or redistribution of the corpus inappropriate, please reach out through a GitHub Issue and we will adjust or remove it promptly.
