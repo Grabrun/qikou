@@ -17,7 +17,9 @@ tests/results/
 Kaomoji/*
 !Kaomoji/kaomojis.txt
 
-# 个人使用、与项目无关的辅助文件：保留在本地磁盘，不入库
+# 个人使用、与项目无关的辅助文件：提示词及其本地版本库。
+# 两者都不进 GitHub —— .prompt/ 自带一个独立仓库，Prompt.txt 在其中。
+.prompt/
 Prompt.txt
 
 # 打包 / 构建产物
