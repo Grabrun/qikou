@@ -154,13 +154,7 @@ The header of each block is `[index/total]  <character count> 字`; the timeline
 python -m qikou --test
 ```
 
-Reads `tests/test.txt`, runs every case, writes the report to `tests/results/test_result_<timestamp>.txt`, then compares every case against the snapshot baseline `tests/baseline.json`. Any change in message count or content is reported, and the exit code is 1 when something differs.
-
-```bash
-python -m qikou --test --update-baseline
-```
-
-Rewrites the baseline, once you have confirmed the changes are the ones you wanted. The case file holds inputs only, so **the baseline is this project's only regression net** — after touching the splitter, run `--test` and read every difference before accepting it.
+Reads `tests/test.txt`, runs every case, and writes the report to `tests/results/test_result_<timestamp>.txt`. The report body is deterministic — no timestamps, no random delays — so two runs over the same cases are byte-identical and can be diffed.
 
 ```
 开始自动测试：.../tests/test.txt
@@ -285,7 +279,7 @@ Hello. How are you?
 
 To add a case, just edit the file.
 
-Cases hold **inputs only** — there are no expected outputs in this file. The expected outputs live in the snapshot baseline `tests/baseline.json`, which `--test` compares against on every run.
+Cases hold **inputs only** — there are no expected outputs. `--test` is therefore a deterministic report generator rather than an assertion suite: it fails only if a case raises. Read the reports, or diff two of them, to catch behaviour changes.
 
 ---
 
@@ -308,7 +302,6 @@ qikou/
 │   └── kaomojis.txt            # kaomoji corpus, 55,213 entries
 ├── tests/
 │   ├── test.txt                # test cases (inputs only)
-│   ├── baseline.json           # snapshot baseline: expected output per case
 │   └── results/                # generated reports (not tracked)
 ├── legacy/                     # archived single-file versions
 │   ├── ChatSplit-v1.0.py

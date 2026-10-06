@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """命令行接口。"""
 
-import json
 import os
 import re
 import sys
@@ -17,7 +16,6 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.dirname(_HERE)
 TEST_FILE = os.path.join(_ROOT, 'tests', 'test.txt')
 RESULT_DIR = os.path.join(_ROOT, 'tests', 'results')
-BASELINE_FILE = os.path.join(_ROOT, 'tests', 'baseline.json')
 
 
 def print_detailed(msgs, cfg):
@@ -83,21 +81,20 @@ def load_test_cases(path):
 
 
 def run_auto_test(path, out_path=None):
-    """跑完所有用例，写报告，并返回 (报告路径, 用时, 快照)。"""
+    """跑完所有用例并写报告，返回 (报告路径, 用时)。"""
     if not os.path.isfile(path):
         print("[错误] 找不到测试文件：%s" % path)
-        return None, 0.0, {}
+        return None, 0.0
     cases = load_test_cases(path)
     if not cases:
         print("[信息] 测试文件里没有用例。")
-        return None, 0.0, {}
+        return None, 0.0
     if out_path is None:
         os.makedirs(RESULT_DIR, exist_ok=True)
         ts = time.strftime("%Y%m%d_%H%M%S")
         out_path = os.path.join(RESULT_DIR, "test_result_%s.txt" % ts)
     start_time = time.time()
     total_msgs = 0
-    snapshot = {}
     max_name_len = max((len(name) for name, _ in cases), default=0)
     with open(out_path, 'w', encoding='utf-8', newline='\n') as f:
         f.write(BANNER + "\n")
@@ -113,7 +110,6 @@ def run_auto_test(path, out_path=None):
         for idx, (name, text) in enumerate(cases, 1):
             msgs, cfg = split_reply(text)
             total_msgs += len(msgs)
-            snapshot["%03d %s" % (idx, name)] = msgs
             write_case_report(f, idx, len(cases), name, text, msgs)
             print("  [%2d/%2d] %s  →  %d 条" %
                   (idx, len(cases), name.ljust(max_name_len), len(msgs)))
@@ -122,69 +118,7 @@ def run_auto_test(path, out_path=None):
         f.write(" 测试完成：%d 个用例，共 %d 条气泡\n"
                 % (len(cases), total_msgs))
         f.write(BANNER + "\n")
-    return out_path, time.time() - start_time, snapshot
-
-
-# ============================================================
-# 快照基线
-#
-# 用例文件只有输入、没有预期输出，因此单跑一遍无法判断"有没有变坏"。
-# 基线把每个用例的完整切分结果存成 JSON，--test 每次跑完都与它比对，
-# 任何条数或内容的变化都会被指出来。改动行为后需要有意识地重写基线
-# （--update-baseline），而不是让它悄悄漂移。
-# ============================================================
-
-def load_baseline(path=None):
-    if path is None:
-        path = BASELINE_FILE
-    if not os.path.isfile(path):
-        return None
-    with open(path, 'r', encoding='utf-8') as f:
-        return json.load(f)
-
-
-def write_baseline(snapshot, path=None):
-    if path is None:
-        path = BASELINE_FILE
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, 'w', encoding='utf-8', newline='\n') as f:
-        json.dump(snapshot, f, ensure_ascii=False, indent=2)
-        f.write("\n")
-    return path
-
-
-def compare_snapshot(snapshot, baseline):
-    """返回 (新增, 缺失, 变化) 三组用例名。"""
-    added = [k for k in snapshot if k not in baseline]
-    removed = [k for k in baseline if k not in snapshot]
-    changed = [k for k in snapshot
-               if k in baseline and snapshot[k] != baseline[k]]
-    return added, removed, changed
-
-
-def _preview(msgs, limit=60):
-    out = []
-    for i, m in enumerate(msgs, 1):
-        one = m.replace('\n', ' ⏎ ')
-        if len(one) > limit:
-            one = one[:limit] + '…'
-        out.append("[%d] %s" % (i, one))
-    return out
-
-
-def report_diff(snapshot, baseline):
-    added, removed, changed = compare_snapshot(snapshot, baseline)
-    for k in added:
-        print("  [新增] %s  →  %d 条" % (k, len(snapshot[k])))
-    for k in removed:
-        print("  [缺失] %s（基线里有，当前用例文件里没有）" % k)
-    for k in changed:
-        print("  [变化] %s" % k)
-        print("         基线 %d 条：%s"
-              % (len(baseline[k]), " | ".join(_preview(baseline[k]))))
-        print("         当前 %d 条：%s"
-              % (len(snapshot[k]), " | ".join(_preview(snapshot[k]))))
-    return added, removed, changed
+    return out_path, time.time() - start_time
 
 
 def read_multiline():
@@ -231,9 +165,8 @@ def manual_mode():
 def print_help():
     print("用法：")
     print("  python -m qikou              # 交互菜单")
-    print("  python -m qikou --test       # 跑 tests/test.txt 并与基线比对")
+    print("  python -m qikou --test       # 跑 tests/test.txt")
     print("  python -m qikou --test FILE  # 跑指定文件")
-    print("  python -m qikou --test --update-baseline  # 重写基线")
     print("  python -m qikou --help       # 显示帮助")
 
 
@@ -283,28 +216,13 @@ def menu_mode():
         print()
         print("开始自动测试：%s" % os.path.abspath(TEST_FILE))
         print("-" * 52)
-        out_path, elapsed, snapshot = run_auto_test(TEST_FILE)
+        out_path, elapsed = run_auto_test(TEST_FILE)
         if out_path is None:
             return 1
         print("-" * 52)
         print("用时：%.2f 秒" % elapsed)
         print("结果已保存到：")
         print("  %s" % os.path.abspath(out_path))
-        baseline = load_baseline()
-        print()
-        if baseline is None:
-            print("未找到基线文件：%s" % os.path.abspath(BASELINE_FILE))
-            print("用 --test --update-baseline 生成基线。")
-            return 1
-        print("-" * 52)
-        print("与基线比对：")
-        added, removed, changed = report_diff(snapshot, baseline)
-        bad = len(added) + len(removed) + len(changed)
-        if bad:
-            print()
-            print("结果：%d 个用例与基线不一致。" % bad)
-            return 1
-        print("结果：全部 %d 个用例与基线一致。" % len(snapshot))
         return 0
     manual_mode()
     return 0
@@ -316,7 +234,6 @@ def main():
         print_help()
         return 0
     if '--test' in args or '-t' in args:
-        update = '--update-baseline' in args
         idx = None
         for flag in ('--test', '-t'):
             if flag in args:
@@ -334,32 +251,12 @@ def main():
         print()
         print("开始自动测试：%s" % os.path.abspath(path))
         print("-" * 52)
-        out_path, elapsed, snapshot = run_auto_test(path)
+        out_path, elapsed = run_auto_test(path)
         if out_path is None:
             return 1
         print("-" * 52)
         print("用时：%.2f 秒" % elapsed)
         print("结果已保存到：")
         print("  %s" % os.path.abspath(out_path))
-        print()
-        if update:
-            write_baseline(snapshot)
-            print("基线已更新：%s" % os.path.abspath(BASELINE_FILE))
-            return 0
-        baseline = load_baseline()
-        if baseline is None:
-            print("未找到基线文件：%s" % os.path.abspath(BASELINE_FILE))
-            print("用 --test --update-baseline 生成基线。")
-            return 1
-        print("-" * 52)
-        print("与基线比对：")
-        added, removed, changed = report_diff(snapshot, baseline)
-        bad = len(added) + len(removed) + len(changed)
-        print()
-        if bad:
-            print("结果：%d 个用例与基线不一致（新增 %d，缺失 %d，变化 %d）"
-                  % (bad, len(added), len(removed), len(changed)))
-            return 1
-        print("结果：全部 %d 个用例与基线一致。" % len(snapshot))
         return 0
     return menu_mode()

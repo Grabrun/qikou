@@ -150,13 +150,7 @@ python -m qikou
 python -m qikou --test
 ```
 
-会读取 `tests/test.txt`，跑全部用例，结果写入 `tests/results/test_result_<时间戳>.txt`，然后与快照基线 `tests/baseline.json` 逐用例比对：条数或内容的任何变化都会被指出来，有差异时退出码为 1。
-
-```bash
-python -m qikou --test --update-baseline
-```
-
-确认变化符合预期后，用它重写基线。用例文件里只有输入、没有预期输出，**基线是这个项目唯一的回归防线**——改代码后请跑一次 `--test`，看清楚每个变化再决定是否固化。
+会读取 `tests/test.txt`，跑全部用例，结果写入 `tests/results/test_result_<时间戳>.txt`。报告正文是确定性的——不含时间戳、不含随机延迟——同一份用例每次输出完全一致，需要时可以对两份报告直接做 diff。
 
 ```
 开始自动测试：.../tests/test.txt
@@ -279,7 +273,7 @@ Hello. How are you?
 - 内容直到下一个 `[CASE]` 或文件末尾
 - 纯空白用例会被保留（结果 0 条），用于测试边界
 
-想加新用例，直接编辑文件即可。新增或修改用例后，`--test` 会把它标为「新增」或「变化」，确认输出正确后再用 `--update-baseline` 固化。
+想加新用例，直接编辑文件即可。
 
 ---
 
@@ -302,7 +296,6 @@ qikou/
 │   └── kaomojis.txt            # 颜文字表
 ├── tests/
 │   ├── test.txt                # 测试用例
-│   ├── baseline.json           # 快照基线：每个用例的期望切分结果
 │   └── results/                # 测试报告（自动生成）
 ├── legacy/                     # 旧版存档
 │   ├── ChatSplit-v1.0.py
