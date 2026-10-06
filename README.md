@@ -410,7 +410,7 @@ qikou/
 
 ### 颜文字数据来源说明
 
-`Kaomoji/kaomojis.txt` 中的颜文字语料收集自 **https://kaomojis.jp**。
+`Kaomoji/kaomojis.txt` 中的颜文字语料来自 **https://kaomojis.jp**。
 
 颜文字本身是符号组合，通常不构成受版权保护的原创作品；但各来源站点的使用条款不尽相同，本项目不对语料的再分发作法律保证。
 

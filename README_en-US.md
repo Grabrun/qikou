@@ -421,7 +421,7 @@ Each version is another step towards learning how to breathe.
 
 ### Note on the kaomoji data
 
-The kaomoji corpus in `Kaomoji/kaomojis.txt` was collected from **https://kaomojis.jp**.
+The kaomoji corpus in `Kaomoji/kaomojis.txt` was from **https://kaomojis.jp**.
 
 A kaomoji is a combination of symbols and normally does not constitute a copyrightable original work. Terms of use differ between sources, however, so this project makes no legal warranty regarding the redistribution of the corpus.
 
