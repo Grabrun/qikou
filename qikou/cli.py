@@ -1,30 +1,94 @@
 # -*- coding: utf-8 -*-
-"""命令行接口。"""
+"""命令行接口。
 
+子命令形态::
+
+    qikou split [文件]    切分（默认从标准输入读取）
+    qikou test  [文件]    跑测试用例
+    qikou menu            交互菜单
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
 import os
 import re
 import sys
 import time
+from typing import Any, List, Optional, Sequence
 
-from . import kaomoji
+from . import __version__, kaomoji
 from .config import Config
+from .message import Message
 from .splitter import split, split_with_delays
 
+__all__ = ["build_parser", "main"]
 
+PROG = "qikou"
 BANNER = "=" * 52
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.dirname(_HERE)
 
 # 用例文件与报告目录属于源码仓库，不随 wheel 分发。装成包之后这两个变量
-# 为 None：--test 仍可跑指定文件，但报告写到当前工作目录，绝不写进
+# 为 None：test 仍可跑指定文件，但报告写到当前工作目录，绝不写进
 # site-packages。
 _REPO = _ROOT if os.path.isdir(os.path.join(_ROOT, 'tests')) else None
 TEST_FILE = os.path.join(_REPO, 'tests', 'test.txt') if _REPO else None
 RESULT_DIR = os.path.join(_REPO, 'tests', 'results') if _REPO else None
 
 
-def print_detailed(messages, cfg):
+# ============================================================
+# 终端
+# ============================================================
+
+def _setup_streams() -> None:
+    """尽量把 stdout/stderr 切到 UTF-8。
+
+    否则在非 UTF-8 控制台（或 PYTHONIOENCODING=ascii）下打印中文与边框
+    会直接抛 UnicodeEncodeError。切不过就跳过，不影响功能。
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:
+            continue
+        try:
+            reconfigure(encoding="utf-8", errors="replace")
+        except (ValueError, OSError):
+            pass
+
+
+def _isatty(stream: Any = None) -> bool:
+    try:
+        return bool((stream or sys.stdout).isatty())
+    except (AttributeError, ValueError):
+        return False
+
+
+# ============================================================
+# 输入
+# ============================================================
+
+def _read_input(path: Optional[str]) -> str:
+    """读入待切分文本；path 为 None 或 '-' 时读标准输入。"""
+    if path is None or path == '-':
+        return sys.stdin.read()
+    with open(path, 'r', encoding='utf-8-sig') as f:
+        return f.read()
+
+
+# ============================================================
+# 输出
+# ============================================================
+
+def effective_config(text: str, config: Optional[Config] = None) -> Config:
+    """返回这段文本实际生效的配置（与 split 内部一致）。"""
+    return (config or Config()).scaled_for_length(len(text.strip()))
+
+
+def print_messages(messages: List[Message], cfg: Config) -> None:
+    """带装饰地逐条打印，并给出模拟发送时间轴。"""
     print()
     print(BANNER)
     print(" 切分结果：%d 条" % len(messages))
@@ -47,6 +111,22 @@ def print_detailed(messages, cfg):
         t += m.delay
     print("  t=%5.2fs  发送完毕" % t)
 
+
+def print_plain(messages: List[Message]) -> None:
+    """只输出消息正文，空行分隔，便于管道消费。"""
+    sys.stdout.write("\n\n".join(m.text for m in messages))
+    if messages:
+        sys.stdout.write("\n")
+
+
+def print_json(messages: List[Message]) -> None:
+    payload = [{"text": m.text, "delay": round(m.delay, 3)} for m in messages]
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+# ============================================================
+# 测试报告
+# ============================================================
 
 def write_case_report(f, idx, total, name, text, msgs):
     f.write("\n")
@@ -130,56 +210,6 @@ def run_auto_test(path, out_path=None):
     return out_path, time.time() - start_time
 
 
-def read_multiline():
-    print("请输入 AI 回复（可多行）。")
-    print("  结束输入：单独一行输入 EOF，或 Ctrl-D")
-    print("  取消    ：Ctrl-C")
-    print("-" * 52)
-    lines = []
-    while True:
-        prompt = "> " if not lines else "  "
-        try:
-            line = input(prompt)
-        except EOFError:
-            print()
-            break
-        if line.strip().upper() == 'EOF':
-            break
-        lines.append(line)
-    return '\n'.join(lines)
-
-
-def manual_mode():
-    while True:
-        try:
-            text = read_multiline()
-        except KeyboardInterrupt:
-            print("\n\n已取消。")
-            return
-        if not text.strip():
-            print("（没有输入内容）")
-        else:
-            messages = split_with_delays(text)
-            cfg = Config().scaled_for_length(len(text.strip()))
-            print_detailed(messages, cfg)
-        print()
-        try:
-            again = input("继续输入？(y/N) ").strip().lower()
-        except (EOFError, KeyboardInterrupt):
-            print()
-            return
-        if again != 'y':
-            return
-
-
-def print_help():
-    print("用法：")
-    print("  python -m qikou              # 交互菜单")
-    print("  python -m qikou --test       # 跑 tests/test.txt")
-    print("  python -m qikou --test FILE  # 跑指定文件")
-    print("  python -m qikou --help       # 显示帮助")
-
-
 def load_kaomojis_checked():
     """加载颜文字语料；加载为空时明确报错。
 
@@ -196,23 +226,99 @@ def load_kaomojis_checked():
     return True
 
 
-def menu_mode():
+# ============================================================
+# 子命令
+# ============================================================
+
+def cmd_split(args: argparse.Namespace) -> int:
+    path = args.file
+
+    if path is None and not sys.stdin.isatty():
+        path = '-'                      # 管道接进来的，按过滤器处理
+    elif path is None:
+        print("从标准输入读取，结束输入：Ctrl-Z 回车（Windows）/ Ctrl-D",
+              file=sys.stderr)
+
+    try:
+        text = _read_input(path)
+    except FileNotFoundError:
+        print("%s: 找不到文件：%s" % (PROG, path), file=sys.stderr)
+        return 1
+    except IsADirectoryError:
+        print("%s: 这是一个目录：%s" % (PROG, path), file=sys.stderr)
+        return 1
+    except UnicodeDecodeError as exc:
+        print("%s: 无法以 UTF-8 解码 %s（%s）" % (PROG, path, exc),
+              file=sys.stderr)
+        return 1
+    except OSError as exc:
+        print("%s: 读取失败：%s" % (PROG, exc), file=sys.stderr)
+        return 1
+
+    config = Config()
+    if args.max_chars is not None:
+        config.max_chars = args.max_chars
+    if args.target_chars is not None:
+        config.target_chars = args.target_chars
+    if args.max_messages is not None:
+        config.max_messages = args.max_messages
+
+    messages = split_with_delays(text, config=config)
+
+    if args.json:
+        print_json(messages)
+    elif args.quiet or not _isatty():
+        print_plain(messages)
+    else:
+        print_messages(messages, effective_config(text, config))
+    return 0
+
+
+def cmd_test(args: argparse.Namespace) -> int:
+    path = args.file
+    if path is None:
+        path = TEST_FILE
+    if path is None:
+        print("%s: 未找到内置用例文件（当前不是从源码仓库运行）。" % PROG,
+              file=sys.stderr)
+        print("       可指定文件：%s test path/to/cases.txt" % PROG,
+              file=sys.stderr)
+        return 1
+
+    if not load_kaomojis_checked():
+        return 1
+
+    print()
+    print("开始自动测试：%s" % os.path.abspath(path))
+    print("-" * 52)
+    out_path, elapsed = run_auto_test(path)
+    if out_path is None:
+        return 1
+    print("-" * 52)
+    print("用时：%.2f 秒" % elapsed)
+    print("结果已保存到：")
+    print("  %s" % os.path.abspath(out_path))
+    return 0
+
+
+def cmd_menu(args: argparse.Namespace) -> int:
     print(BANNER)
     print(" 气口 —— AI 回复分句器")
     print(BANNER)
     if not load_kaomojis_checked():
         return 1
-    has_test = TEST_FILE is not None and os.path.isfile(TEST_FILE)
+
+    test_file = TEST_FILE
+    has_test = test_file is not None and os.path.isfile(test_file)
     print()
     print("请选择模式：")
     print("  [1] 手动输入")
-    if has_test:
-        print("  [2] 自动测试（读取 %s）"
-              % os.path.basename(TEST_FILE))
-    elif TEST_FILE is None:
+    if has_test and test_file is not None:
+        print("  [2] 自动测试（读取 %s）" % os.path.basename(test_file))
+    elif test_file is None:
         print("  [2] （当前不是从源码仓库运行，内置用例不可用）")
     else:
-        print("  [2] （未找到 %s）" % os.path.basename(TEST_FILE))
+        print("  [2] （未找到 %s）" % os.path.basename(test_file))
     print("  [q] 退出")
     print()
     try:
@@ -223,17 +329,17 @@ def menu_mode():
     if choice in ('q', 'quit', 'exit'):
         return 0
     if choice == '2':
-        if not has_test:
-            if TEST_FILE is None:
+        if not has_test or test_file is None:
+            if test_file is None:
                 print("[提示] 当前不是从源码仓库运行，内置用例不可用。")
-                print("      可用 --test 指定用例文件。")
+                print("      可用 test 子命令指定用例文件。")
             else:
-                print("[提示] 未找到 %s。" % os.path.basename(TEST_FILE))
+                print("[提示] 未找到 %s。" % os.path.basename(test_file))
             return 0
         print()
-        print("开始自动测试：%s" % os.path.abspath(TEST_FILE))
+        print("开始自动测试：%s" % os.path.abspath(test_file))
         print("-" * 52)
-        out_path, elapsed = run_auto_test(TEST_FILE)
+        out_path, elapsed = run_auto_test(test_file)
         if out_path is None:
             return 1
         print("-" * 52)
@@ -241,43 +347,106 @@ def menu_mode():
         print("结果已保存到：")
         print("  %s" % os.path.abspath(out_path))
         return 0
-    manual_mode()
-    return 0
+    return _manual_mode()
 
 
-def main():
-    args = sys.argv[1:]
-    if '--help' in args or '-h' in args:
-        print_help()
-        return 0
-    if '--test' in args or '-t' in args:
-        idx = None
-        for flag in ('--test', '-t'):
-            if flag in args:
-                idx = args.index(flag)
-                break
-        path = None
-        if idx is not None and idx + 1 < len(args):
-            nxt = args[idx + 1]
-            if not nxt.startswith('-'):
-                path = nxt
-        if path is None:
-            path = TEST_FILE
-        if path is None:
-            print("[信息] 未找到内置用例文件（当前不是从源码仓库运行）。")
-            print("       可指定文件：python -m qikou --test path/to/cases.txt")
-            return 1
-        if not load_kaomojis_checked():
-            return 1
+def _read_multiline() -> str:
+    print("请输入 AI 回复（可多行）。")
+    print("  结束输入：单独一行输入 EOF，或 Ctrl-D")
+    print("  取消    ：Ctrl-C")
+    print("-" * 52)
+    lines: List[str] = []
+    while True:
+        prompt = "> " if not lines else "  "
+        try:
+            line = input(prompt)
+        except EOFError:
+            print()
+            break
+        if line.strip().upper() == 'EOF':
+            break
+        lines.append(line)
+    return '\n'.join(lines)
+
+
+def _manual_mode() -> int:
+    while True:
+        try:
+            text = _read_multiline()
+        except KeyboardInterrupt:
+            print("\n\n已取消。")
+            return 0
+        if not text.strip():
+            print("（没有输入内容）")
+        else:
+            messages = split_with_delays(text)
+            print_messages(messages, effective_config(text))
         print()
-        print("开始自动测试：%s" % os.path.abspath(path))
-        print("-" * 52)
-        out_path, elapsed = run_auto_test(path)
-        if out_path is None:
-            return 1
-        print("-" * 52)
-        print("用时：%.2f 秒" % elapsed)
-        print("结果已保存到：")
-        print("  %s" % os.path.abspath(out_path))
+        try:
+            again = input("继续输入？(y/N) ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            return 0
+        if again != 'y':
+            return 0
+
+
+# ============================================================
+# 入口
+# ============================================================
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog=PROG,
+        description="气口 / Cadence —— 把 AI 的长回复切成读起来像真人发出的短消息。",
+        epilog="不带子命令时显示本帮助。示例：echo \"长文本\" | qikou split",
+    )
+    parser.add_argument(
+        "--version", action="version", version="%(prog)s " + __version__,
+    )
+    sub = parser.add_subparsers(dest="command", metavar="命令")
+
+    p_split = sub.add_parser(
+        "split", help="切分文本（默认从标准输入读取）",
+        description="把一段文本切成若干条短消息。",
+    )
+    p_split.add_argument(
+        "file", nargs="?", metavar="文件",
+        help="要切分的文本文件；'-' 或省略表示标准输入",
+    )
+    p_split.add_argument("-j", "--json", action="store_true",
+                         help="以 JSON 输出（含每条的建议延迟）")
+    p_split.add_argument("-q", "--quiet", action="store_true",
+                         help="只输出消息正文，空行分隔")
+    p_split.add_argument("-c", "--max-chars", type=int, metavar="N",
+                         help="单条硬上限，调小更碎")
+    p_split.add_argument("-T", "--target-chars", type=int, metavar="N",
+                         help="理想长度")
+    p_split.add_argument("-m", "--max-messages", type=int, metavar="N",
+                         help="条数上限（软）")
+    p_split.set_defaults(handler=cmd_split)
+
+    p_test = sub.add_parser(
+        "test", help="跑测试用例并输出报告（仅源码仓库可用）",
+        description="跑一份 [CASE] 格式的用例文件，报告写入 tests/results/。",
+    )
+    p_test.add_argument(
+        "file", nargs="?", metavar="文件",
+        help="用例文件，默认 tests/test.txt",
+    )
+    p_test.set_defaults(handler=cmd_test)
+
+    p_menu = sub.add_parser("menu", help="交互菜单")
+    p_menu.set_defaults(handler=cmd_menu)
+
+    return parser
+
+
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    _setup_streams()
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if getattr(args, "command", None) is None:
+        parser.print_help()
         return 0
-    return menu_mode()
+    return args.handler(args)

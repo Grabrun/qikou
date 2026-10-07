@@ -100,17 +100,79 @@ This installs the `qikou` command; `python -m qikou` keeps working too. Installi
 
 ## Quick Start
 
+### Command line
+
+```bash
+qikou split file.txt            # split a file
+echo "long text" | qikou split  # or read from stdin
+qikou test                      # run the test cases (source checkout)
+qikou menu                      # interactive menu
+qikou --version
+qikou --help
+```
+
+`python -m qikou` is equivalent to `qikou`; with no subcommand it prints the help.
+
+### Splitting
+
+On a terminal you get decorated output plus a simulated send timeline:
+
+```
+$ qikou split reply.txt
+
+====================================================
+ 切分结果：5 条
+ 参数：max=60  target=20  min=4  max_messages=6
+====================================================
+
+─── [1/5]  11 字 ───
+好的，我来帮你规划。
+
+模拟发送时间轴：
+  t= 0.00s  第 1 条（11 字，等待 0.93s）
+  ...
+```
+
+When the output is piped, only the message bodies are printed (blank-line separated), so `grep` / `wc` work as expected:
+
+```bash
+$ echo "你好。今天不错。再见。" | qikou split
+你好。今天不错。
+
+再见。
+```
+
+For machine-readable output use `--json`:
+
+```bash
+$ qikou split --json reply.txt
+[
+  {
+    "text": "好的，我来帮你规划。",
+    "delay": 0.833
+  }
+]
+```
+
+| Option | Effect |
+|---|---|
+| `-j`, `--json` | JSON output, delays included |
+| `-q`, `--quiet` | message bodies only |
+| `-c N`, `--max-chars N` | hard cap per message (smaller = choppier) |
+| `-T N`, `--target-chars N` | ideal length |
+| `-m N`, `--max-messages N` | soft cap on the message count |
+
 ### Interactive menu
 
 ```bash
-python -m qikou
+qikou menu
 ```
 
 ```
 ====================================================
  气口 —— AI 回复分句器
 ====================================================
-[信息] 已加载 <N> 个颜文字（Trie），耗时 <T> ms
+[信息] 已加载 55213 条颜文字
 
 请选择模式：
   [1] 手动输入
@@ -118,7 +180,7 @@ python -m qikou
   [q] 退出
 ```
 
-The command-line interface is currently Chinese-only; the menu labels above are quoted verbatim from the program.
+The command-line interface is currently Chinese-only; the menu labels above are quoted verbatim from the program. The `split` subcommand's *output* is your text, and `--json` is language-neutral.
 
 ### Manual input
 
@@ -151,10 +213,11 @@ Choose `[1]`, paste your text, and finish with a line containing `EOF` or with C
 
 The header of each block is `[index/total]  <character count> 字`; the timeline is `t=<elapsed>s  message <n> (<count> chars, waiting <delay>s)`.
 
-### Automated test
+### Running the test cases
 
 ```bash
-python -m qikou --test
+qikou test                       # runs tests/test.txt
+qikou test path/to/cases.txt     # runs a specific file
 ```
 
 Reads `tests/test.txt`, runs every case, and writes the report to `tests/results/test_result_<timestamp>.txt`. The report body is deterministic — no timestamps, no random delays — so two runs over the same cases are byte-identical and can be diffed.
@@ -171,16 +234,10 @@ Reads `tests/test.txt`, runs every case, and writes the report to `tests/results
   .../tests/results/test_result_<时间戳>.txt
 ```
 
-### Running a specific file
-
-```bash
-python -m qikou --test path/to/your_cases.txt
-```
-
 ### Help
 
 ```bash
-python -m qikou --help
+qikou --help
 ```
 
 ---

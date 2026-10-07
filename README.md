@@ -100,17 +100,79 @@ pip install .
 
 ## 快速上手
 
+### 命令行
+
+```bash
+qikou split 文件.txt          # 切分文件
+echo "长文本" | qikou split    # 或从标准输入读
+qikou test                    # 跑测试用例（源码仓库）
+qikou menu                    # 交互菜单
+qikou --version
+qikou --help
+```
+
+`python -m qikou` 与 `qikou` 等价；不带子命令时显示帮助。
+
+### 切分
+
+输出到终端时带装饰与模拟发送时间轴：
+
+```
+$ qikou split 回复.txt
+
+====================================================
+ 切分结果：5 条
+ 参数：max=60  target=20  min=4  max_messages=6
+====================================================
+
+─── [1/5]  11 字 ───
+好的，我来帮你规划。
+
+模拟发送时间轴：
+  t= 0.00s  第 1 条（11 字，等待 0.93s）
+  ...
+```
+
+被管道接走时自动只输出消息正文（空行分隔），方便 `grep` / `wc`：
+
+```bash
+$ echo "你好。今天不错。再见。" | qikou split
+你好。今天不错。
+
+再见。
+```
+
+需要机器可读就用 `--json`：
+
+```bash
+$ qikou split --json 回复.txt
+[
+  {
+    "text": "好的，我来帮你规划。",
+    "delay": 0.833
+  }
+]
+```
+
+| 选项 | 作用 |
+|---|---|
+| `-j`, `--json` | JSON 输出（含每条的建议延迟） |
+| `-q`, `--quiet` | 只输出消息正文 |
+| `-c N`, `--max-chars N` | 单条硬上限，调小更碎 |
+| `-T N`, `--target-chars N` | 理想长度 |
+| `-m N`, `--max-messages N` | 条数上限（软） |
+
 ### 交互菜单
 
 ```bash
-python -m qikou
+qikou menu
 ```
 
 ```
 ====================================================
  气口 —— AI 回复分句器
 ====================================================
-[信息] 已加载 <N> 个颜文字（Trie），耗时 <T> ms
+[信息] 已加载 55213 条颜文字
 
 请选择模式：
   [1] 手动输入
@@ -147,10 +209,11 @@ python -m qikou
   ...
 ```
 
-### 自动测试
+### 跑测试用例
 
 ```bash
-python -m qikou --test
+qikou test                       # 跑 tests/test.txt
+qikou test path/to/cases.txt     # 跑指定文件
 ```
 
 会读取 `tests/test.txt`，跑全部用例，结果写入 `tests/results/test_result_<时间戳>.txt`。报告正文是确定性的——不含时间戳、不含随机延迟——同一份用例每次输出完全一致，需要时可以对两份报告直接做 diff。
@@ -167,16 +230,10 @@ python -m qikou --test
   .../tests/results/test_result_<时间戳>.txt
 ```
 
-### 跑指定文件
-
-```bash
-python -m qikou --test path/to/your_cases.txt
-```
-
 ### 帮助
 
 ```bash
-python -m qikou --help
+qikou --help
 ```
 
 ---
