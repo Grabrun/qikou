@@ -87,7 +87,7 @@ AI 生成的回复通常较长，直接发送到社交媒体上像"小作文"。
 
 ## 安装
 
-**要求**：Python 3.8+。零第三方依赖。颜文字语料随包分发，装完即可用。
+**要求**：Python 3.9+。零第三方依赖。颜文字语料随包分发，装完即可用。
 
 ```bash
 git clone https://github.com/Grabrun/qikou.git

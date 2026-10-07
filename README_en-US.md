@@ -87,7 +87,7 @@ Chopping by character count breaks Markdown, URLs, and code blocks, and reads li
 
 ## Installation
 
-**Requirements**: Python 3.8+. Zero third-party dependencies. The kaomoji corpus ships inside the package, so it works right after install.
+**Requirements**: Python 3.9+. Zero third-party dependencies. The kaomoji corpus ships inside the package, so it works right after install.
 
 ```bash
 git clone https://github.com/Grabrun/qikou.git

@@ -4,6 +4,16 @@
 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [2.2.1] — 2026-10-08
+
+### Fixed
+
+- **`requires-python` 由 `>=3.8` 上调为 `>=3.9`。** 构建后端
+  `setuptools>=77`（PEP 639 许可元数据所需）自身要求 Python ≥ 3.9，
+  所以 3.8 上无法从源码构建——原声明是错的，CI 在 3.8 上的安装步骤也
+  因此失败。运行时本身仍兼容 3.8（测试通过），但发布元数据必须按**构建
+  能力**声明，故上调下限。CI 矩阵与 classifiers 同步去掉 3.8。
+
 ## [2.2.0] — 2026-10-08
 
 首个公开发布版本。
@@ -12,7 +22,7 @@
 
 - 自动化测试套件 `tests/test_qikou.py`（pytest，44 项），覆盖公开 API 契约、
   切分行为、`Config` 语义、语料加载与命令行。
-- GitHub Actions CI：Python 3.8–3.13 跑测试、`mypy --strict` 类型检查、
+- GitHub Actions CI：Python 3.9–3.13 跑测试、`mypy --strict` 类型检查、
   构建并校验 wheel 元数据。
 - `CHANGELOG.md`、`SECURITY.md`、`CONTRIBUTING.md`。
 - `pyproject.toml`：`[project.optional-dependencies]` 的 `dev` 组、
@@ -70,5 +80,6 @@
   系统上会导致语料静默加载 0 条。现在语料位于 `qikou/kaomojis.txt`，
   且加载失败会明确报错。
 
+[2.2.1]: https://github.com/Grabrun/qikou/releases/tag/v2.2.1
 [2.2.0]: https://github.com/Grabrun/qikou/releases/tag/v2.2.0
 [2.1.0]: https://test.pypi.org/project/qikou/2.1.0/

@@ -13,8 +13,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 与 pyproject.toml 的 requires-python 保持一致
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+        # 与 pyproject.toml 的 requires-python 保持一致。
+        # 3.8 不支持：构建后端 setuptools>=77（PEP 639 许可元数据所需）
+        # 要求 Python >= 3.9。
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

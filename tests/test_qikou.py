@@ -28,7 +28,7 @@ from qikou.cli import main
 # ============================================================
 
 def test_version():
-    assert qikou.__version__ == "2.2.0"
+    assert qikou.__version__ == "2.2.1"
 
 
 def test_public_api_surface():
