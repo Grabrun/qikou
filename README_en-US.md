@@ -447,10 +447,10 @@ Every decision in the splitter is a tradeoff between **semantic completeness** a
 
 **Model-based splitting**. Binary classification of candidate cut points, with LightGBM.
 
-- data: LLM synthesis + rule-based weak supervision + user feedback
-- features: local characters + position and length + semantic lexicon + structural state + rule scores
-- model: LightGBM (40 features, ~5 minutes to train, under 10 ms to infer)
-- fusion: rules generate candidates, the model decides the cuts, greedy packing, post-processing to finish
+- data: LLM synthesis + rule-based weak supervision + real logs (anonymised) + online feedback
+- features: local characters + position and length + semantic lexicon + structural state + candidate context + rule scores (~55–65 features)
+- model: LightGBM. **Trained with LightGBM, executed by a bundled model plus a pure-Python evaluator — the runtime stays dependency-free** (measured: the pure-Python evaluator matches LightGBM's output exactly)
+- packing: dynamic programming for a globally optimal split, replacing local greedy packing
 - hardware: **an ordinary 4-core CPU and 8 GB of RAM is enough** — no GPU needed
 
 It addresses the ceiling of the rule approach:
@@ -458,6 +458,8 @@ It addresses the ceiling of the rule approach:
 - semantic boundary ≠ punctuation boundary (e.g. `我觉得吧，这个方案，可能还需要再想想`)
 - long-text cut optimisation (e.g. after `to` rather than after `and`)
 - tone versus information (e.g. is `好吧。那就这样。` one message or two?)
+
+The full design — measured pre-research numbers, data and compliance, the feature list, the evaluation framework, the phased rollout and the cost estimate — is in [docs/v3-design.md](docs/v3-design.md) (Chinese).
 
 ### v4.0 Breathing (long term)
 
