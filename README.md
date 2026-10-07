@@ -4,6 +4,9 @@
 
 > 让 AI 回复会呼吸。
 
+[![PyPI](https://img.shields.io/pypi/v/qikou.svg)](https://pypi.org/project/qikou/)
+[![Python](https://img.shields.io/pypi/pyversions/qikou.svg)](https://pypi.org/project/qikou/)
+[![CI](https://github.com/Grabrun/qikou/actions/workflows/ci.yml/badge.svg)](https://github.com/Grabrun/qikou/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **气口** —— 戏曲和评书里的术语。演员说唱时换气、停顿的那个位置，叫"气口"。好的气口让一段话说得自然、有节奏、不憋气；坏的气口让听众跟不上、喘不过气。

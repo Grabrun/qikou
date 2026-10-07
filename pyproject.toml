@@ -21,7 +21,7 @@ keywords = [
     "chinese",
 ]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Natural Language :: Chinese (Simplified)",
     "Natural Language :: English",
@@ -39,6 +39,14 @@ classifiers = [
 ]
 dependencies = []
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=7",
+    "mypy>=1.8",
+    "build>=1.0",
+    "twine>=4.0",
+]
+
 [project.urls]
 Homepage = "https://github.com/Grabrun/qikou"
 Repository = "https://github.com/Grabrun/qikou"
@@ -55,3 +63,12 @@ qikou = ["*.txt", "py.typed"]
 
 [tool.setuptools.dynamic]
 version = { attr = "qikou.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.mypy]
+files = ["qikou"]
+strict = true
+warn_unused_configs = true

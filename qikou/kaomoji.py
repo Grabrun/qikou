@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 import time
 from typing import Any, Dict, Optional, Union
 
@@ -31,6 +32,10 @@ _state: Dict[str, Any] = {
     "count": 0,
     "loaded": False,
 }
+
+# 语料是进程级共享状态。用可重入锁保护"检查-加载"的竞态：多个线程同时
+# 首次调用 split() 时，只会真正加载一次。
+_lock = threading.RLock()
 
 
 def default_path() -> str:
@@ -58,9 +63,10 @@ def load_kaomojis(path: Optional[_PATH] = None) -> int:
 
     if not os.path.isfile(target):
         logger.warning("未找到颜文字语料：%s", target)
-        _state["trie"] = trie
-        _state["count"] = 0
-        _state["loaded"] = True
+        with _lock:
+            _state["trie"] = trie
+            _state["count"] = 0
+            _state["loaded"] = True
         return 0
 
     t0 = time.perf_counter()
@@ -80,9 +86,10 @@ def load_kaomojis(path: Optional[_PATH] = None) -> int:
                 count += 1
             node[_END] = True
 
-    _state["trie"] = trie
-    _state["count"] = count
-    _state["loaded"] = True
+    with _lock:
+        _state["trie"] = trie
+        _state["count"] = count
+        _state["loaded"] = True
 
     logger.debug("已加载 %d 个颜文字，耗时 %.0f ms",
                  count, (time.perf_counter() - t0) * 1000.0)
@@ -93,14 +100,17 @@ def ensure_loaded() -> None:
     """首次使用时自动加载默认语料；已加载或已尝试过则直接返回。
 
     调用 :func:`load_kaomojis` 显式指定过语料后，这里不会再覆盖它。
+    多线程并发首次调用只会真正加载一次。
     """
     if not _state["loaded"]:
-        load_kaomojis()
+        with _lock:
+            if not _state["loaded"]:
+                load_kaomojis()
 
 
 def kaomoji_count() -> int:
     """返回当前已加载的颜文字条数。"""
-    return _state["count"]
+    return int(_state["count"])
 
 
 def kaomoji_len(s: str, i: int) -> int:

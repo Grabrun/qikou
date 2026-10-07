@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import re
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from . import kaomoji
 from .config import Config
@@ -26,6 +26,17 @@ from .protect import (
 )
 from .postprocess import postprocess_message
 
+__all__ = ["split"]
+
+
+# 类型别名：
+#   Unit   原子单元 —— (文本, 块号, 类型)
+#   Packed 打包后的消息 —— [文本, 块号]，元素可变（合并时会原地改文本）
+#   Blocks 占位符对应的原始片段
+Unit = Tuple[str, int, str]
+Packed = List[Any]
+Blocks = Sequence[str]
+
 
 # ============================================================
 # 成对符号状态
@@ -37,18 +48,18 @@ from .postprocess import postprocess_message
 # 配得上对的，配不上的就是笔误。
 # ============================================================
 
-def _has_partner(text, pos, token):
+def _has_partner(text: str, pos: int, token: str) -> bool:
     """pos 之后是否还会出现 token，即当前未闭合的标记还有没有机会配对。"""
     return text.find(token, pos) >= 0
 
 
-def _has_any(text, pos, chars):
+def _has_any(text: str, pos: int, chars: str) -> bool:
     """pos 之后是否出现 chars 中的任一字符。"""
     tail = text[pos:]
     return any(c in tail for c in chars)
 
 
-def in_md_span(text, pos):
+def in_md_span(text: str, pos: int) -> bool:
     before = text[:pos]
     for token in ('**', '__', '~~', '`'):
         if before.count(token) % 2 == 1 and _has_partner(text, pos, token):
@@ -61,7 +72,7 @@ def in_md_span(text, pos):
     return False
 
 
-def in_unclosed_bracket(text, pos):
+def in_unclosed_bracket(text: str, pos: int) -> bool:
     before = text[:pos]
     depth = 0
     for c in before:
@@ -82,21 +93,21 @@ def in_unclosed_bracket(text, pos):
 # 词与字符判定
 # ============================================================
 
-def _prev_word(text, dot_pos):
+def _prev_word(text: str, dot_pos: int) -> str:
     i = dot_pos - 1
     while i >= 0 and (text[i].isalnum() or text[i] in ".\'"):
         i -= 1
     return text[i + 1:dot_pos].lower()
 
 
-def _prev_word_raw(text, dot_pos):
+def _prev_word_raw(text: str, dot_pos: int) -> str:
     i = dot_pos - 1
     while i >= 0 and (text[i].isalnum() or text[i] in ".\'"):
         i -= 1
     return text[i + 1:dot_pos]
 
 
-def _is_abbrev(text, dot_pos):
+def _is_abbrev(text: str, dot_pos: int) -> bool:
     prev = _prev_word(text, dot_pos)
     if prev in EN_ABBREV:
         return True
@@ -106,12 +117,12 @@ def _is_abbrev(text, dot_pos):
     return False
 
 
-def _is_single_upper_letter(text, dot_pos):
+def _is_single_upper_letter(text: str, dot_pos: int) -> bool:
     w = _prev_word_raw(text, dot_pos)
     return len(w) == 1 and w.isupper()
 
 
-def _is_cjk(ch):
+def _is_cjk(ch: str) -> bool:
     if not ch:
         return False
     o = ord(ch)
@@ -126,7 +137,7 @@ def _is_cjk(ch):
 # 分句
 # ============================================================
 
-def merge_leading_punct(parts):
+def merge_leading_punct(parts: List[str]) -> List[str]:
     if len(parts) < 2:
         return parts
     fixed = [parts[0]]
@@ -141,7 +152,7 @@ def merge_leading_punct(parts):
     return fixed
 
 
-def _split_by_br(line):
+def _split_by_br(line: str) -> List[str]:
     if not HTML_BR_RE.search(line):
         return [line]
     result = []
@@ -154,7 +165,7 @@ def _split_by_br(line):
     return result
 
 
-def _split_sentences_core(line):
+def _split_sentences_core(line: str) -> List[str]:
     result = []
     buf = []
     i = 0
@@ -217,14 +228,14 @@ def _split_sentences_core(line):
     return merge_leading_punct(result)
 
 
-def split_sentences(line):
+def split_sentences(line: str) -> List[str]:
     parts = []
     for seg in _split_by_br(line):
         parts.extend(_split_sentences_core(seg))
     return parts
 
 
-def build_units(text):
+def build_units(text: str) -> List[Unit]:
     units = []
     blocks = re.split(r'\n\s*\n', text)
     bid = 0
@@ -266,7 +277,7 @@ def build_units(text):
 # 拼接
 # ============================================================
 
-def join_text(a, b):
+def join_text(a: str, b: str) -> str:
     if not a:
         return b
     if not b:
@@ -284,7 +295,7 @@ def join_text(a, b):
     return a + b
 
 
-def smart_merge(a, b):
+def smart_merge(a: str, b: str) -> str:
     if not a:
         return b
     if not b:
@@ -298,7 +309,8 @@ def smart_merge(a, b):
 # 打分切点
 # ============================================================
 
-def score_cut(text, pos, base, cfg, blocks):
+def score_cut(text: str, pos: int, base: int, cfg: Config,
+              blocks: Blocks) -> int:
     s = base
     left = text[:pos].rstrip()
     right = text[pos:].lstrip()
@@ -347,13 +359,13 @@ def score_cut(text, pos, base, cfg, blocks):
     return s
 
 
-def find_cut(text, cfg, blocks):
+def find_cut(text: str, cfg: Config, blocks: Blocks) -> int:
     hard = index_at_len(text, cfg.max_chars, blocks)
     if hard <= 0:
         m = PH_RE.match(text, 0)
         return m.end() if m else 1
 
-    candidates = {}
+    candidates: Dict[int, int] = {}
     for sep in SEPS:
         base = SEP_BASE_SCORE[sep]
         idx = 0
@@ -389,7 +401,7 @@ def find_cut(text, cfg, blocks):
     return best_pos
 
 
-def split_long(text, cfg, blocks):
+def split_long(text: str, cfg: Config, blocks: Blocks) -> List[str]:
     if visible_len(text, blocks) <= cfg.max_chars:
         return [text]
 
@@ -416,7 +428,7 @@ def split_long(text, cfg, blocks):
 # 打包
 # ============================================================
 
-def is_fragment(text):
+def is_fragment(text: str) -> bool:
     t = text.strip()
     if not t:
         return True
@@ -429,13 +441,14 @@ def is_fragment(text):
     return not REAL_CHAR_RE.search(t)
 
 
-def ends_with_tilde(text):
+def ends_with_tilde(text: str) -> bool:
     t = text.rstrip()
     return bool(t) and t[-1] in TILDE_CHARS
 
 
-def pack_units(units, cfg, blocks):
-    msgs = []
+def pack_units(units: List[Unit], cfg: Config,
+               blocks: Blocks) -> List[Packed]:
+    msgs: List[Packed] = []
     for text, bid, kind in units:
         if kind in ('table', 'heading', 'hr'):
             msgs.append([text, bid])
@@ -481,7 +494,8 @@ def pack_units(units, cfg, blocks):
     return msgs
 
 
-def enforce_max_messages(msgs, cfg, blocks):
+def enforce_max_messages(msgs: List[Packed], cfg: Config,
+                         blocks: Blocks) -> List[Packed]:
     if cfg.max_messages <= 0:
         return msgs
     merge_limit = cfg.merge_max_chars

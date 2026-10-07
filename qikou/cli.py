@@ -16,7 +16,7 @@ import os
 import re
 import sys
 import time
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence, TextIO, Tuple
 
 from . import __version__, kaomoji
 from .config import Config
@@ -121,7 +121,8 @@ def print_json(messages: List[str]) -> None:
 # 测试报告
 # ============================================================
 
-def write_case_report(f, idx, total, name, text, msgs):
+def write_case_report(f: TextIO, idx: int, total: int, name: str,
+                     text: str, msgs: List[str]) -> None:
     f.write("\n")
     f.write("-" * 52 + "\n")
     f.write("用例 %d/%d：%s\n" % (idx, total, name))
@@ -139,7 +140,7 @@ def write_case_report(f, idx, total, name, text, msgs):
 CASE_MARK_RE = re.compile(r'^\s*\[CASE\]\s*(.*?)\s*$', re.MULTILINE)
 
 
-def load_test_cases(path):
+def load_test_cases(path: str) -> List[Tuple[str, str]]:
     with open(path, 'r', encoding='utf-8-sig') as f:
         content = f.read()
     if '[CASE]' not in content:
@@ -158,7 +159,8 @@ def load_test_cases(path):
     return cases
 
 
-def run_auto_test(path, out_path=None):
+def run_auto_test(path: str,
+                  out_path: Optional[str] = None) -> Tuple[Optional[str], float]:
     """跑完所有用例并写报告，返回 (报告路径, 用时)。"""
     if not os.path.isfile(path):
         print("[错误] 找不到测试文件：%s" % path)
@@ -203,7 +205,7 @@ def run_auto_test(path, out_path=None):
     return out_path, time.time() - start_time
 
 
-def load_kaomojis_checked():
+def load_kaomojis_checked() -> bool:
     """加载颜文字语料；加载为空时明确报错。
 
     语料缺失时切分仍能跑，只是颜文字不再被识别——结果悄悄变差。
@@ -442,4 +444,4 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if getattr(args, "command", None) is None:
         parser.print_help()
         return 0
-    return args.handler(args)
+    return int(args.handler(args))

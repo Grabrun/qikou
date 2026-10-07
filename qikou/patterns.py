@@ -28,23 +28,23 @@ URL_RE = re.compile(
 PH_RE = re.compile(r'\x00(\d+)\x00')
 
 
-def is_before_list_item(right):
+def is_before_list_item(right: str) -> bool:
     return bool(LIST_RE.match(right))
 
 
-def is_list_start(text):
+def is_list_start(text: str) -> bool:
     return bool(LIST_RE.match(text.lstrip()))
 
 
-def is_heading(text):
+def is_heading(text: str) -> bool:
     return bool(HEADING_RE.match(text.lstrip()))
 
 
-def is_hr(text):
+def is_hr(text: str) -> bool:
     return bool(HR_RE.match(text))
 
 
-def is_table_msg(msg):
+def is_table_msg(msg: str) -> bool:
     lines = [l for l in msg.split('\n') if l.strip()]
     if len(lines) < 2:
         return False

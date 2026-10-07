@@ -3,8 +3,10 @@
 
 from .patterns import HR_RE
 
+__all__ = ["postprocess_message"]
 
-def fix_unbalanced_md(msg):
+
+def fix_unbalanced_md(msg: str) -> str:
     """补 ** 与 __。水平线和反引号不处理。"""
     if not msg:
         return msg
@@ -16,7 +18,7 @@ def fix_unbalanced_md(msg):
     return msg
 
 
-def fix_unbalanced_quote(msg):
+def fix_unbalanced_quote(msg: str) -> str:
     """补中文引号 / 日式引号。括号不补。"""
     if not msg:
         return msg
@@ -27,7 +29,7 @@ def fix_unbalanced_quote(msg):
     return msg
 
 
-def postprocess_message(msg):
+def postprocess_message(msg: str) -> str:
     msg = fix_unbalanced_md(msg)
     msg = fix_unbalanced_quote(msg)
     return msg

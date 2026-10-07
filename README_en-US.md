@@ -4,6 +4,9 @@
 
 > Let AI replies breathe.
 
+[![PyPI](https://img.shields.io/pypi/v/qikou.svg)](https://pypi.org/project/qikou/)
+[![Python](https://img.shields.io/pypi/pyversions/qikou.svg)](https://pypi.org/project/qikou/)
+[![CI](https://github.com/Grabrun/qikou/actions/workflows/ci.yml/badge.svg)](https://github.com/Grabrun/qikou/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **气口 (qìkǒu)** is a term from Chinese opera and storytelling. It is the breath point — the spot where a performer pauses mid-passage to take a new breath. A good qikou makes the words land naturally, with rhythm, never running out of air. A bad one leaves the audience behind and gasping. The English name, **Cadence**, comes from music: the close of a phrase, the rhythm of speech.

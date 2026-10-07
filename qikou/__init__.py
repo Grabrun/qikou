@@ -15,7 +15,7 @@ from .config import Config
 from .kaomoji import kaomoji_count, load_kaomojis
 from .splitter import split
 
-__version__ = "2.1.0"
+__version__ = "2.2.0"
 
 __all__ = [
     "Config",
