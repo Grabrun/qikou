@@ -4,11 +4,10 @@
 from __future__ import annotations
 
 import re
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from . import kaomoji
 from .config import Config
-from .message import Message
 from .lexicon import (
     EN_ABBREV, ZH_TAIL_BAD, ZH_HEAD_BAD,
     EN_TAIL_BAD, EN_HEAD_BAD,
@@ -529,32 +528,6 @@ def enforce_max_messages(msgs, cfg, blocks):
 # 主入口
 # ============================================================
 
-def _split(text: str,
-           config: Optional[Config] = None) -> Tuple[List[str], Config]:
-    """内部入口：返回 (消息列表, 生效的配置)。
-
-    ``config`` 不会被修改；返回的是按长度缩放后的新实例。
-    """
-    kaomoji.ensure_loaded()
-    cfg = Config() if config is None else config
-
-    text = text.strip()
-    if not text:
-        return [], cfg
-
-    protected, special_blocks = protect_special(text)
-    total = visible_len(protected, special_blocks)
-    cfg = cfg.scaled_for_length(total)
-
-    units = build_units(protected)
-    msgs = pack_units(units, cfg, special_blocks)
-    msgs = enforce_max_messages(msgs, cfg, special_blocks)
-
-    out = [restore_special(m[0], special_blocks) for m in msgs]
-    out = [postprocess_message(m) for m in out]
-    return out, cfg
-
-
 def split(text: str, config: Optional[Config] = None) -> List[str]:
     """把一段文本切成若干条短消息。
 
@@ -570,19 +543,20 @@ def split(text: str, config: Optional[Config] = None) -> List[str]:
         for message in split(reply):
             send(message)
     """
-    messages, _ = _split(text, config)
-    return messages
+    kaomoji.ensure_loaded()
+    cfg = Config() if config is None else config
 
+    text = text.strip()
+    if not text:
+        return []
 
-def split_with_delays(text: str,
-                      config: Optional[Config] = None) -> List[Message]:
-    """同 :func:`split`，但每条消息附带建议发送延迟（秒）。
+    protected, special_blocks = protect_special(text)
+    total = visible_len(protected, special_blocks)
+    cfg = cfg.scaled_for_length(total)
 
-    ::
+    units = build_units(protected)
+    msgs = pack_units(units, cfg, special_blocks)
+    msgs = enforce_max_messages(msgs, cfg, special_blocks)
 
-        for m in split_with_delays(reply):
-            send(m.text)
-            time.sleep(m.delay)
-    """
-    messages, cfg = _split(text, config)
-    return [Message(text=m, delay=cfg.delay_for(m)) for m in messages]
+    out = [restore_special(m[0], special_blocks) for m in msgs]
+    return [postprocess_message(m) for m in out]

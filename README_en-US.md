@@ -37,7 +37,6 @@ AI replies tend to be long. Sent as-is to a social platform, they read like an e
 - one idea per message, 10–40 characters
 - a break after punctuation, with tone particles standing on their own
 - lists, code blocks, and URLs kept intact
-- a human-like delay instead of an instant wall of text
 
 Chopping by character count breaks Markdown, URLs, and code blocks, and reads like a machine. Cadence does **semantics-aware soft splitting**.
 
@@ -78,7 +77,6 @@ Chopping by character count breaks Markdown, URLs, and code blocks, and reads li
 
 ### Output
 
-- **Human-like delay**: every message carries a suggested send delay (by length plus jitter)
 - **Adaptive length**: long text relaxes the per-message cap so it does not shatter into pieces
 - **Message-count control**: over the cap, the shortest adjacent pair is merged — but list items, headings, tables, and tilde endings are skipped
 
@@ -115,7 +113,7 @@ qikou --help
 
 ### Splitting
 
-On a terminal you get decorated output plus a simulated send timeline:
+On a terminal you get decorated output:
 
 ```
 $ qikou split reply.txt
@@ -128,9 +126,9 @@ $ qikou split reply.txt
 ─── [1/5]  11 字 ───
 好的，我来帮你规划。
 
-模拟发送时间轴：
-  t= 0.00s  第 1 条（11 字，等待 0.93s）
-  ...
+─── [2/5]  27 字 ───
+首先你需要确定目标，比如你想在三个月内学会 Python。
+...
 ```
 
 When the output is piped, only the message bodies are printed (blank-line separated), so `grep` / `wc` work as expected:
@@ -147,16 +145,14 @@ For machine-readable output use `--json`:
 ```bash
 $ qikou split --json reply.txt
 [
-  {
-    "text": "好的，我来帮你规划。",
-    "delay": 0.833
-  }
+  "好的，我来帮你规划。",
+  "首先你需要确定目标，比如你想在三个月内学会 Python。"
 ]
 ```
 
 | Option | Effect |
 |---|---|
-| `-j`, `--json` | JSON output, delays included |
+| `-j`, `--json` | JSON output (array of strings) |
 | `-q`, `--quiet` | message bodies only |
 | `-c N`, `--max-chars N` | hard cap per message (smaller = choppier) |
 | `-T N`, `--target-chars N` | ideal length |
@@ -205,13 +201,11 @@ Choose `[1]`, paste your text, and finish with a line containing `EOF` or with C
 ─── [5/5]  12 字 ───
 最后定期复习并调整计划。
 
-模拟发送时间轴：
-  t= 0.00s  第 1 条（11 字，等待 0.93s）
-  t= 0.93s  第 2 条（27 字，等待 1.40s）
-  ...
+----------------------------------------------------
+合计 89 字（最长 27 字）
 ```
 
-The header of each block is `[index/total]  <character count> 字`; the timeline is `t=<elapsed>s  message <n> (<count> chars, waiting <delay>s)`.
+The header of each block is `[index/total]  <character count> 字`.
 
 ### Running the test cases
 
@@ -220,7 +214,7 @@ qikou test                       # runs tests/test.txt
 qikou test path/to/cases.txt     # runs a specific file
 ```
 
-Reads `tests/test.txt`, runs every case, and writes the report to `tests/results/test_result_<timestamp>.txt`. The report body is deterministic — no timestamps, no random delays — so two runs over the same cases are byte-identical and can be diffed.
+Reads the case file, runs every case, and writes the report to `tests/results/test_result_<timestamp>.txt`. The report body is deterministic — no timestamps — so two runs over the same cases are byte-identical and can be diffed.
 
 ```
 开始自动测试：.../tests/test.txt
@@ -254,19 +248,6 @@ for message in split(text):
 ```
 
 `split()` returns `list[str]`. The kaomoji corpus is **loaded automatically** on first use (about 0.1 s); you normally never have to touch it.
-
-### When you need the send delays
-
-```python
-from qikou import split_with_delays
-
-for m in split_with_delays(text):
-    print(m.text, "  wait %.2fs" % m.delay)
-    # send(m.text)
-    # time.sleep(m.delay)
-```
-
-`Message` is a frozen dataclass with just `text` and `delay` (seconds).
 
 ### Custom configuration
 
@@ -317,11 +298,6 @@ Every parameter of the `Config` class:
 | `max_messages` | 6 | Soft cap on the message count. Over it, the shortest adjacent pair is merged |
 | `atomic_merge_prefix` | 20 | Threshold for merging a short prefix with a long atomic fragment |
 | `merge_max_chars` | 60 | Cap after a merge (scaled up to that tier's `max_chars`) |
-| `base_ms` | 500 | Base value of the human-like delay |
-| `per_char_ms` | 30 | Delay added per character |
-| `jitter_ms` | 200 | Random jitter |
-| `min_ms` | 300 | Minimum delay |
-| `max_ms` | 1800 | Maximum delay |
 
 **`max_messages` is a soft cap**: over it the shortest adjacent pair is merged, but list items, headings, tables, horizontal rules, standalone code blocks / URLs, and entries ending in a tilde never take part in a merge — so a reply full of structure can end up above this value. Plain prose does reach the cap: a merged message stays within `merge_max_chars`, which is scaled up together with the tier (see the table below).
 
@@ -379,7 +355,6 @@ qikou/
 │   ├── kaomoji.py              # kaomoji trie
 │   ├── protect.py              # code block / URL placeholder protection
 │   ├── postprocess.py          # closing unclosed markers
-│   ├── message.py              # Message result type
 │   ├── splitter.py             # core splitting logic
 │   ├── kaomojis.txt            # kaomoji corpus, 55,213 entries (shipped in the wheel)
 │   └── py.typed                # PEP 561 marker
@@ -402,11 +377,10 @@ qikou/
 |---|---|
 | `patterns.py` | all regexes, character sets, and structural predicates |
 | `lexicon.py` | abbreviation list, conjunction list, base punctuation scores |
-| `config.py` | configuration parameters, adaptive length, human-like delay |
+| `config.py` | configuration parameters, adaptive length |
 | `kaomoji.py` | loading and matching the kaomoji trie |
 | `protect.py` | protecting and restoring code block / URL placeholders |
 | `postprocess.py` | closing unclosed Markdown and quotes |
-| `message.py` | the `Message` result type (text + suggested delay) |
 | `splitter.py` | sentence splitting, packing, scoring, cut search, main entry point |
 | `cli.py` | argument parsing, manual input, automated test |
 
@@ -430,7 +404,15 @@ Every decision in the splitter is a tradeoff between **semantic completeness** a
 
 ## Version History
 
-### v2.0 (current)
+### v2.1 (current)
+
+- packaging standardised: `pyproject.toml` (PEP 621), `py.typed` (PEP 561), a `qikou` console entry point
+- API standardised: `split(text, config=None) -> list[str]`, `Config` is a dataclass
+- CLI switched to subcommands: `qikou split` / `qikou test` / `qikou menu`, with stdin and `--json`
+- the kaomoji corpus ships inside the wheel and is loaded lazily on first use
+- **human-like delays removed** — the project now focuses on splitting quality alone
+
+### v2.0
 
 **Cadence**. Rules plus scoring.
 
@@ -439,6 +421,7 @@ Every decision in the splitter is a tradeoff between **semantic completeness** a
 - 120 test cases covering a broad range of edge cases, all running without error
 - command: `python -m qikou`
 - `ChatSplit-v1.0.py` / `ChatSplit-v2.0.py` archived under `legacy/`
+- human-like delay timeline (removed in v2.1)
 
 ### v1.0
 

@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import random
 from dataclasses import dataclass, replace
 
 __all__ = ["Config"]
@@ -36,17 +35,6 @@ class Config:
     #: 合并后单条上限。
     merge_max_chars: int = 60
 
-    #: 拟人延迟基础值（毫秒）。
-    base_ms: int = 500
-    #: 每字增加的延迟（毫秒）。
-    per_char_ms: int = 30
-    #: 随机抖动上限（毫秒）。
-    jitter_ms: int = 200
-    #: 延迟下限（毫秒）。
-    min_ms: int = 300
-    #: 延迟上限（毫秒）。
-    max_ms: int = 1800
-
     def scaled_for_length(self, total: int) -> "Config":
         """返回按文本总长放宽后的新配置，**不改动 self**。
 
@@ -70,10 +58,3 @@ class Config:
             max_messages=max(self.max_messages, max_messages),
             merge_max_chars=max(self.merge_max_chars, new_max),
         )
-
-    def delay_for(self, text: str) -> float:
-        """返回这条消息的建议发送延迟（秒）：按字数加随机抖动。"""
-        d = self.base_ms + len(text) * self.per_char_ms \
-            + random.randint(0, self.jitter_ms)
-        d = max(self.min_ms, min(d, self.max_ms))
-        return d / 1000.0

@@ -37,7 +37,6 @@ AI 生成的回复通常较长，直接发送到社交媒体上像"小作文"。
 - 一条一个意思单元，10–40 字
 - 标点后断开，语气词独立
 - 列表、代码块、URL 保持完整
-- 加拟人延迟，不是瞬间刷屏
 
 直接按字符数硬切会破坏 Markdown、URL、代码块，读起来像机器。气口做的是**语义感知的软切分**。
 
@@ -78,7 +77,6 @@ AI 生成的回复通常较长，直接发送到社交媒体上像"小作文"。
 
 ### 输出
 
-- **拟人延迟**：每条消息附带建议发送延迟（按字数 + 抖动）
 - **自适应长度**：长文本自动放宽单条上限，避免碎成一地
 - **条数控制**：超过上限时合并最短相邻对，但跳过列表 / 标题 / 表格 / 波浪号结尾
 
@@ -115,7 +113,7 @@ qikou --help
 
 ### 切分
 
-输出到终端时带装饰与模拟发送时间轴：
+输出到终端时带装饰：
 
 ```
 $ qikou split 回复.txt
@@ -128,9 +126,9 @@ $ qikou split 回复.txt
 ─── [1/5]  11 字 ───
 好的，我来帮你规划。
 
-模拟发送时间轴：
-  t= 0.00s  第 1 条（11 字，等待 0.93s）
-  ...
+─── [2/5]  27 字 ───
+首先你需要确定目标，比如你想在三个月内学会 Python。
+...
 ```
 
 被管道接走时自动只输出消息正文（空行分隔），方便 `grep` / `wc`：
@@ -147,16 +145,14 @@ $ echo "你好。今天不错。再见。" | qikou split
 ```bash
 $ qikou split --json 回复.txt
 [
-  {
-    "text": "好的，我来帮你规划。",
-    "delay": 0.833
-  }
+  "好的，我来帮你规划。",
+  "首先你需要确定目标，比如你想在三个月内学会 Python。"
 ]
 ```
 
 | 选项 | 作用 |
 |---|---|
-| `-j`, `--json` | JSON 输出（含每条的建议延迟） |
+| `-j`, `--json` | JSON 输出（字符串数组） |
 | `-q`, `--quiet` | 只输出消息正文 |
 | `-c N`, `--max-chars N` | 单条硬上限，调小更碎 |
 | `-T N`, `--target-chars N` | 理想长度 |
@@ -203,10 +199,8 @@ qikou menu
 ─── [5/5]  12 字 ───
 最后定期复习并调整计划。
 
-模拟发送时间轴：
-  t= 0.00s  第 1 条（11 字，等待 0.93s）
-  t= 0.93s  第 2 条（27 字，等待 1.40s）
-  ...
+----------------------------------------------------
+合计 89 字（最长 27 字）
 ```
 
 ### 跑测试用例
@@ -216,7 +210,7 @@ qikou test                       # 跑 tests/test.txt
 qikou test path/to/cases.txt     # 跑指定文件
 ```
 
-会读取 `tests/test.txt`，跑全部用例，结果写入 `tests/results/test_result_<时间戳>.txt`。报告正文是确定性的——不含时间戳、不含随机延迟——同一份用例每次输出完全一致，需要时可以对两份报告直接做 diff。
+会读取用例文件，跑全部用例，结果写入 `tests/results/test_result_<时间戳>.txt`。报告正文是确定性的——不含时间戳——同一份用例每次输出完全一致，需要时可以对两份报告直接做 diff。
 
 ```
 开始自动测试：.../tests/test.txt
@@ -250,19 +244,6 @@ for message in split(text):
 ```
 
 `split()` 返回 `list[str]`。颜文字语料在首次调用时**自动加载**（约 0.1 秒），通常不需要手动处理。
-
-### 需要发送延迟时
-
-```python
-from qikou import split_with_delays
-
-for m in split_with_delays(text):
-    print(m.text, "  等待 %.2fs" % m.delay)
-    # send(m.text)
-    # time.sleep(m.delay)
-```
-
-`Message` 是 frozen dataclass，只有 `text` 和 `delay`（秒）两个字段。
 
 ### 自定义配置
 
@@ -313,11 +294,6 @@ print(kaomoji_count())             # 当前已加载的条数
 | `max_messages` | 6 | 条数上限（**软**）。超限合并最短相邻对 |
 | `atomic_merge_prefix` | 20 | 短前缀 + 超长原子片段合并的阈值 |
 | `merge_max_chars` | 60 | 合并后单条上限（随档位放大到该档的 `max_chars`） |
-| `base_ms` | 500 | 拟人延迟基础值 |
-| `per_char_ms` | 30 | 每字增加延迟 |
-| `jitter_ms` | 200 | 随机抖动 |
-| `min_ms` | 300 | 最小延迟 |
-| `max_ms` | 1800 | 最大延迟 |
 
 **`max_messages` 是软上限**：超限时合并最短相邻对，但列表项、标题、表格、水平线、独立代码块 / URL、以波浪号结尾的条目都不参与合并——所以结构多的回复，最终条数可能超过这个值。纯文本回复则能压缩到上限以内：合并后的单条不超过 `merge_max_chars`，而它随档位一并放大（见下表）。
 
@@ -371,7 +347,6 @@ qikou/
 │   ├── kaomoji.py              # 颜文字 Trie
 │   ├── protect.py              # 特殊片段保护
 │   ├── postprocess.py          # 后处理
-│   ├── message.py              # Message 结果类型
 │   ├── splitter.py             # 核心切分逻辑
 │   ├── kaomojis.txt            # 颜文字语料（随 wheel 分发）
 │   └── py.typed                # PEP 561 类型标记
@@ -393,11 +368,10 @@ qikou/
 |---|---|
 | `patterns.py` | 所有正则、字符集、结构判定函数 |
 | `lexicon.py` | 缩写表、连词表、标点基础分 |
-| `config.py` | 配置参数、长度自适应、拟人延迟 |
+| `config.py` | 配置参数、长度自适应 |
 | `kaomoji.py` | 颜文字 Trie 加载与匹配 |
 | `protect.py` | 代码块 / URL 占位符保护与还原 |
 | `postprocess.py` | 未闭合 Markdown 与引号的补全 |
-| `message.py` | `Message` 结果类型（正文 + 建议延迟） |
 | `splitter.py` | 分句、打包、打分、切点查找、主入口 |
 | `cli.py` | 命令行解析、手动输入、自动测试 |
 
@@ -421,7 +395,15 @@ qikou/
 
 ## 版本历史
 
-### v2.0（当前）
+### v2.1（当前）
+
+- 打包标准化：`pyproject.toml`（PEP 621）、`py.typed`（PEP 561）、控制台入口 `qikou`
+- API 规范化：`split(text, config=None) -> list[str]`，`Config` 改为 dataclass
+- 命令行改为子命令：`qikou split` / `qikou test` / `qikou menu`，支持标准输入与 `--json`
+- 颜文字语料随包分发，首次调用自动加载
+- **去掉拟人延迟**，专注切分质量
+
+### v2.0
 
 **气口**。规则 + 打分方案。
 
@@ -430,6 +412,7 @@ qikou/
 - 上百个测试用例，覆盖各类边界，全部通过
 - 命令：`python -m qikou`
 - 遗留 `ChatSplit-v1.0.py` / `ChatSplit-v2.0.py` 归档到 `legacy/`
+- 拟人延迟时间轴（已在 v2.1 移除）
 
 ### v1.0
 

@@ -7,30 +7,19 @@
 
     from qikou import split
 
-    for text in split("好的，我来帮你规划。首先确定目标。然后每天练习。"):
-        send(text)
-
-需要发送延迟时用 :func:`split_with_delays`::
-
-    from qikou import split_with_delays
-
-    for m in split_with_delays(long_reply):
-        send(m.text)
-        time.sleep(m.delay)
+    for message in split(reply):
+        send(message)
 """
 
 from .config import Config
 from .kaomoji import kaomoji_count, load_kaomojis
-from .message import Message
-from .splitter import split, split_with_delays
+from .splitter import split
 
 __version__ = "2.1.0"
 
 __all__ = [
     "Config",
-    "Message",
     "kaomoji_count",
     "load_kaomojis",
     "split",
-    "split_with_delays",
 ]

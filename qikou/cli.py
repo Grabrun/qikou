@@ -20,8 +20,7 @@ from typing import Any, List, Optional, Sequence
 
 from . import __version__, kaomoji
 from .config import Config
-from .message import Message
-from .splitter import split, split_with_delays
+from .splitter import split
 
 __all__ = ["build_parser", "main"]
 
@@ -87,8 +86,8 @@ def effective_config(text: str, config: Optional[Config] = None) -> Config:
     return (config or Config()).scaled_for_length(len(text.strip()))
 
 
-def print_messages(messages: List[Message], cfg: Config) -> None:
-    """带装饰地逐条打印，并给出模拟发送时间轴。"""
+def print_messages(messages: List[str], cfg: Config) -> None:
+    """带装饰地逐条打印。"""
     print()
     print(BANNER)
     print(" 切分结果：%d 条" % len(messages))
@@ -98,30 +97,24 @@ def print_messages(messages: List[Message], cfg: Config) -> None:
     print(BANNER)
     for i, m in enumerate(messages, 1):
         print()
-        print("─── [%d/%d]  %d 字 ───"
-              % (i, len(messages), len(m.text)))
-        print(m.text)
+        print("─── [%d/%d]  %d 字 ───" % (i, len(messages), len(m)))
+        print(m)
     print()
     print("-" * 52)
-    print("模拟发送时间轴：")
-    t = 0.0
-    for i, m in enumerate(messages, 1):
-        print("  t=%5.2fs  第 %d 条（%d 字，等待 %.2fs）"
-              % (t, i, len(m.text), m.delay))
-        t += m.delay
-    print("  t=%5.2fs  发送完毕" % t)
+    print("合计 %d 字（最长 %d 字）"
+          % (sum(len(m) for m in messages),
+             max((len(m) for m in messages), default=0)))
 
 
-def print_plain(messages: List[Message]) -> None:
+def print_plain(messages: List[str]) -> None:
     """只输出消息正文，空行分隔，便于管道消费。"""
-    sys.stdout.write("\n\n".join(m.text for m in messages))
+    sys.stdout.write("\n\n".join(messages))
     if messages:
         sys.stdout.write("\n")
 
 
-def print_json(messages: List[Message]) -> None:
-    payload = [{"text": m.text, "delay": round(m.delay, 3)} for m in messages]
-    print(json.dumps(payload, ensure_ascii=False, indent=2))
+def print_json(messages: List[str]) -> None:
+    print(json.dumps(messages, ensure_ascii=False, indent=2))
 
 
 # ============================================================
@@ -263,7 +256,7 @@ def cmd_split(args: argparse.Namespace) -> int:
     if args.max_messages is not None:
         config.max_messages = args.max_messages
 
-    messages = split_with_delays(text, config=config)
+    messages = split(text, config=config)
 
     if args.json:
         print_json(messages)
@@ -379,7 +372,7 @@ def _manual_mode() -> int:
         if not text.strip():
             print("（没有输入内容）")
         else:
-            messages = split_with_delays(text)
+            messages = split(text)
             print_messages(messages, effective_config(text))
         print()
         try:
@@ -415,7 +408,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="要切分的文本文件；'-' 或省略表示标准输入",
     )
     p_split.add_argument("-j", "--json", action="store_true",
-                         help="以 JSON 输出（含每条的建议延迟）")
+                         help="以 JSON 输出（字符串数组）")
     p_split.add_argument("-q", "--quiet", action="store_true",
                          help="只输出消息正文，空行分隔")
     p_split.add_argument("-c", "--max-chars", type=int, metavar="N",
