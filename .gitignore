@@ -11,11 +11,10 @@ __pycache__/
 # 自动测试报告（由 python -m qikou --test 生成，每次带时间戳）
 tests/results/
 
-# 颜文字语料：只跟踪代码实际加载的 kaomojis.txt。
-# 其余 4 个（gboard / googlejp / msime / ios.plist，约 13.7 MB）未被任何代码
-# 引用，来源与再分发依据尚待确认，故保留在本地磁盘但不入库。
-Kaomoji/*
-!Kaomoji/kaomojis.txt
+# 颜文字来源数据：4 个上游导出文件（gboard / googlejp / msime / ios.plist，
+# 约 13.7 MB），未被任何代码引用，仅本地保留、不入库。
+# 实际加载的语料已移入包内：qikou/data/kaomojis.txt（随 wheel 分发）。
+Kaomoji/
 
 # 个人使用、与项目无关的辅助文件：提示词及其本地版本库。
 # 两者都不进 GitHub —— .prompt/ 自带一个独立仓库，Prompt.txt 在其中。
@@ -31,8 +30,8 @@ dist/
 *.egg-info/
 .eggs/
 
-# 虚拟环境
-.venv/
+# 虚拟环境（.venv、.venv-build、.venv-test 等）
+.venv*/
 venv/
 env/
 

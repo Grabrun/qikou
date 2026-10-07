@@ -1,0 +1,5 @@
+# sdist 内容清单。
+# wheel 的内容由 pyproject.toml 的 [tool.setuptools] 决定，这里只补默认不包含的文件。
+
+# 用例文件：源码仓库专用。pip 安装后不会落地，--test 需要显式指定文件。
+include tests/test.txt

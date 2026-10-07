@@ -86,12 +86,15 @@ AI 生成的回复通常较长，直接发送到社交媒体上像"小作文"。
 
 ## 安装
 
-**要求**：Python 3.8+。零第三方依赖。
+**要求**：Python 3.8+。零第三方依赖。颜文字语料随包分发，装完即可用。
 
 ```bash
 git clone https://github.com/Grabrun/qikou.git
 cd qikou
+pip install .
 ```
+
+安装后提供 `qikou` 命令，也可继续用 `python -m qikou`。不安装也能在仓库根目录直接运行。
 
 ---
 
@@ -291,16 +294,18 @@ qikou/
 │   ├── kaomoji.py              # 颜文字 Trie
 │   ├── protect.py              # 特殊片段保护
 │   ├── postprocess.py          # 后处理
-│   └── splitter.py             # 核心切分逻辑
-├── Kaomoji/
-│   └── kaomojis.txt            # 颜文字表
+│   ├── splitter.py             # 核心切分逻辑
+│   └── kaomojis.txt            # 颜文字语料（随 wheel 分发）
 ├── tests/
 │   ├── test.txt                # 测试用例
 │   └── results/                # 测试报告（自动生成）
 ├── legacy/                     # 旧版存档
 │   ├── ChatSplit-v1.0.py
 │   └── ChatSplit-v2.0.py
-└── README.md
+├── pyproject.toml              # 打包配置（PEP 621）
+├── MANIFEST.in                 # sdist 内容清单
+├── README.md                   # 中文文档
+└── README_en-US.md             # 英文文档
 ```
 
 ### 各模块职责
@@ -410,7 +415,7 @@ qikou/
 
 ### 颜文字数据来源说明
 
-`Kaomoji/kaomojis.txt` 中的颜文字语料来自 **https://kaomojis.jp**。
+`qikou/kaomojis.txt` 中的颜文字语料来自 **https://kaomojis.jp**。
 
 颜文字本身是符号组合，通常不构成受版权保护的原创作品；但各来源站点的使用条款不尽相同，本项目不对语料的再分发作法律保证。
 

@@ -14,8 +14,13 @@ BANNER = "=" * 52
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.dirname(_HERE)
-TEST_FILE = os.path.join(_ROOT, 'tests', 'test.txt')
-RESULT_DIR = os.path.join(_ROOT, 'tests', 'results')
+
+# 用例文件与报告目录属于源码仓库，不随 wheel 分发。装成包之后这两个变量
+# 为 None：--test 仍可跑指定文件，但报告写到当前工作目录，绝不写进
+# site-packages。
+_REPO = _ROOT if os.path.isdir(os.path.join(_ROOT, 'tests')) else None
+TEST_FILE = os.path.join(_REPO, 'tests', 'test.txt') if _REPO else None
+RESULT_DIR = os.path.join(_REPO, 'tests', 'results') if _REPO else None
 
 
 def print_detailed(msgs, cfg):
@@ -90,9 +95,13 @@ def run_auto_test(path, out_path=None):
         print("[信息] 测试文件里没有用例。")
         return None, 0.0
     if out_path is None:
-        os.makedirs(RESULT_DIR, exist_ok=True)
         ts = time.strftime("%Y%m%d_%H%M%S")
-        out_path = os.path.join(RESULT_DIR, "test_result_%s.txt" % ts)
+        if RESULT_DIR is not None:
+            os.makedirs(RESULT_DIR, exist_ok=True)
+            out_path = os.path.join(RESULT_DIR, "test_result_%s.txt" % ts)
+        else:
+            # 非源码仓库运行：报告写到当前工作目录
+            out_path = os.path.abspath("test_result_%s.txt" % ts)
     start_time = time.time()
     total_msgs = 0
     max_name_len = max((len(name) for name, _ in cases), default=0)
@@ -191,13 +200,15 @@ def menu_mode():
     print(BANNER)
     if not load_kaomojis_checked():
         return 1
-    has_test = os.path.isfile(TEST_FILE)
+    has_test = TEST_FILE is not None and os.path.isfile(TEST_FILE)
     print()
     print("请选择模式：")
     print("  [1] 手动输入")
     if has_test:
         print("  [2] 自动测试（读取 %s）"
               % os.path.basename(TEST_FILE))
+    elif TEST_FILE is None:
+        print("  [2] （当前不是从源码仓库运行，内置用例不可用）")
     else:
         print("  [2] （未找到 %s）" % os.path.basename(TEST_FILE))
     print("  [q] 退出")
@@ -211,7 +222,11 @@ def menu_mode():
         return 0
     if choice == '2':
         if not has_test:
-            print("[提示] 未找到 %s。" % os.path.basename(TEST_FILE))
+            if TEST_FILE is None:
+                print("[提示] 当前不是从源码仓库运行，内置用例不可用。")
+                print("      可用 --test 指定用例文件。")
+            else:
+                print("[提示] 未找到 %s。" % os.path.basename(TEST_FILE))
             return 0
         print()
         print("开始自动测试：%s" % os.path.abspath(TEST_FILE))
@@ -246,6 +261,10 @@ def main():
                 path = nxt
         if path is None:
             path = TEST_FILE
+        if path is None:
+            print("[信息] 未找到内置用例文件（当前不是从源码仓库运行）。")
+            print("       可指定文件：python -m qikou --test path/to/cases.txt")
+            return 1
         if not load_kaomojis_checked():
             return 1
         print()

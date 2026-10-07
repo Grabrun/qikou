@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qikou"
+dynamic = ["version"]
+description = "Cadence (气口) — semantics-aware chat bubble splitter: turn one long AI reply into several short chat messages."
+readme = "README_en-US.md"
+requires-python = ">=3.8"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Grabrun" }]
+keywords = [
+    "text-segmentation",
+    "sentence-splitter",
+    "chatbot",
+    "markdown",
+    "kaomoji",
+    "nlp",
+    "chinese",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Natural Language :: Chinese (Simplified)",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Text Processing :: Linguistic",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/Grabrun/qikou"
+Repository = "https://github.com/Grabrun/qikou"
+Issues = "https://github.com/Grabrun/qikou/issues"
+
+[project.scripts]
+qikou = "qikou.cli:main"
+
+[tool.setuptools]
+packages = ["qikou"]
+
+[tool.setuptools.package-data]
+qikou = ["*.txt"]
+
+[tool.setuptools.dynamic]
+version = { attr = "qikou.__version__" }

@@ -86,12 +86,15 @@ Chopping by character count breaks Markdown, URLs, and code blocks, and reads li
 
 ## Installation
 
-**Requirements**: Python 3.8+. Zero third-party dependencies.
+**Requirements**: Python 3.8+. Zero third-party dependencies. The kaomoji corpus ships inside the package, so it works right after install.
 
 ```bash
 git clone https://github.com/Grabrun/qikou.git
 cd qikou
+pip install .
 ```
+
+This installs the `qikou` command; `python -m qikou` keeps working too. Installing is optional — you can also run it straight from the repository root.
 
 ---
 
@@ -299,22 +302,20 @@ qikou/
 │   ├── kaomoji.py              # kaomoji trie
 │   ├── protect.py              # code block / URL placeholder protection
 │   ├── postprocess.py          # closing unclosed markers
-│   └── splitter.py             # core splitting logic
-├── Kaomoji/
-│   └── kaomojis.txt            # kaomoji corpus, 55,213 entries
+│   ├── splitter.py             # core splitting logic
+│   └── kaomojis.txt            # kaomoji corpus, 55,213 entries (shipped in the wheel)
 ├── tests/
 │   ├── test.txt                # test cases (inputs only)
 │   └── results/                # generated reports (not tracked)
 ├── legacy/                     # archived single-file versions
 │   ├── ChatSplit-v1.0.py
 │   └── ChatSplit-v2.0.py
-├── HANDOVER.md                 # handover notes (Chinese)
+├── pyproject.toml              # packaging metadata (PEP 621)
+├── MANIFEST.in                 # sdist contents
 ├── README.md                   # Chinese README
 ├── README_en-US.md             # this file
 └── LICENSE                     # MIT
 ```
-
-`Kaomoji/` additionally holds four upstream exports (`kaomojis-gboard.txt`, `kaomojis-googlejp.txt`, `kaomojis-msime.txt`, `kaomojis-ios.plist`, about 13.7 MB). No code reads them; they are kept on disk and excluded from version control.
 
 ### Module responsibilities
 
@@ -423,7 +424,7 @@ Each version is another step towards learning how to breathe.
 
 ### Note on the kaomoji data
 
-The kaomoji corpus in `Kaomoji/kaomojis.txt` comes from **https://kaomojis.jp**.
+The kaomoji corpus in `qikou/kaomojis.txt` comes from **https://kaomojis.jp**.
 
 A kaomoji is a combination of symbols and normally does not constitute a copyrightable original work. Terms of use differ between sources, however, so this project makes no legal warranty regarding the redistribution of the corpus.
 

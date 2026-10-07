@@ -7,10 +7,12 @@ import time
 
 _END = '\x00'
 
-# 语料位置。目录名与磁盘保持一致（首字母大写），并集中在这里定义，
-# 避免调用方各自拼路径。历史上代码写的是小写 'kaomoji'，在
-# Windows 上被大小写不敏感的文件系统掩盖，Linux/macOS 上会静默加载 0 条。
-KAOMOJI_DIR = 'Kaomoji'
+# 语料随包分发，直接放在包目录下，构建 wheel 时由 pyproject.toml 的
+# package-data 一并打包。路径集中在这里定义，避免调用方各自拼路径。
+#
+# 历史教训：早期代码指向仓库根目录的 'kaomoji'（小写、且在包外），
+# 在 Windows 上被大小写不敏感的文件系统掩盖，Linux/macOS 上会静默加载
+# 0 条；而包外目录在 pip 安装后根本不存在。
 KAOMOJI_FILE = 'kaomojis.txt'
 
 _state = {
@@ -20,10 +22,9 @@ _state = {
 
 
 def default_path():
-    """返回默认语料文件的绝对路径。"""
+    """返回包内语料文件的绝对路径。"""
     here = os.path.dirname(os.path.abspath(__file__))
-    root = os.path.dirname(here)
-    return os.path.join(root, KAOMOJI_DIR, KAOMOJI_FILE)
+    return os.path.join(here, KAOMOJI_FILE)
 
 
 def load_kaomojis(path=None):
