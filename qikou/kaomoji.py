@@ -1,51 +1,73 @@
 # -*- coding: utf-8 -*-
-"""颜文字表：Trie 索引。"""
+"""颜文字语料：Trie 索引。
 
+语料随包分发，直接放在包目录下，构建 wheel 时由 pyproject.toml 的
+package-data 一并打包。
+
+历史教训：早期代码指向仓库根目录的 'kaomoji'（小写、且在包外），
+在 Windows 上被大小写不敏感的文件系统掩盖，Linux/macOS 上会静默加载
+0 条；而包外目录在 pip 安装后根本不存在。
+"""
+
+from __future__ import annotations
+
+import logging
 import os
 import time
+from typing import Any, Dict, Optional, Union
 
+__all__ = ["default_path", "ensure_loaded", "is_kaomoji", "kaomoji_count",
+           "kaomoji_len", "load_kaomojis"]
 
-_END = '\x00'
+logger = logging.getLogger(__name__)
 
-# 语料随包分发，直接放在包目录下，构建 wheel 时由 pyproject.toml 的
-# package-data 一并打包。路径集中在这里定义，避免调用方各自拼路径。
-#
-# 历史教训：早期代码指向仓库根目录的 'kaomoji'（小写、且在包外），
-# 在 Windows 上被大小写不敏感的文件系统掩盖，Linux/macOS 上会静默加载
-# 0 条；而包外目录在 pip 安装后根本不存在。
-KAOMOJI_FILE = 'kaomojis.txt'
+_PATH = Union[str, "os.PathLike[str]"]
 
-_state = {
-    'trie': {},
-    'count': 0,
+_END = "\x00"
+KAOMOJI_FILE = "kaomojis.txt"
+
+_state: Dict[str, Any] = {
+    "trie": {},
+    "count": 0,
+    "loaded": False,
 }
 
 
-def default_path():
+def default_path() -> str:
     """返回包内语料文件的绝对路径。"""
     here = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(here, KAOMOJI_FILE)
 
 
-def load_kaomojis(path=None):
-    """从文件加载颜文字到 Trie。返回去重后的条目数。"""
-    if path is None:
-        path = default_path()
+def load_kaomojis(path: Optional[_PATH] = None) -> int:
+    """把颜文字语料加载进 Trie，返回去重后的条目数。
 
-    trie = {}
+    Args:
+        path: 语料文件路径；默认用包内自带的那份。
+
+    Returns:
+        去重后的条目数；文件不存在时返回 0。
+
+    成功时不向 stdout 输出任何内容（信息走 :mod:`logging`）。语料缺失只
+    记录一条 warning，切分仍可继续进行，只是不再识别颜文字。
+    """
+    target = default_path() if path is None else os.fspath(path)
+
+    trie: Dict[str, Any] = {}
     count = 0
 
-    if not os.path.isfile(path):
-        print("[警告] 未找到颜文字文件：%s" % path)
-        _state['trie'] = trie
-        _state['count'] = 0
+    if not os.path.isfile(target):
+        logger.warning("未找到颜文字语料：%s", target)
+        _state["trie"] = trie
+        _state["count"] = 0
+        _state["loaded"] = True
         return 0
 
-    t0 = time.time()
-    with open(path, 'r', encoding='utf-8-sig') as f:
+    t0 = time.perf_counter()
+    with open(target, "r", encoding="utf-8-sig") as f:
         for line in f:
             s = line.strip()
-            if not s or s.startswith('#'):
+            if not s or s.startswith("#"):
                 continue
             node = trie
             for c in s:
@@ -58,21 +80,32 @@ def load_kaomojis(path=None):
                 count += 1
             node[_END] = True
 
-    _state['trie'] = trie
-    _state['count'] = count
+    _state["trie"] = trie
+    _state["count"] = count
+    _state["loaded"] = True
 
-    print("[信息] 已加载 %d 个颜文字（Trie），耗时 %.0f ms"
-          % (count, (time.time() - t0) * 1000.0))
+    logger.debug("已加载 %d 个颜文字，耗时 %.0f ms",
+                 count, (time.perf_counter() - t0) * 1000.0)
     return count
 
 
-def kaomoji_count():
-    return _state['count']
+def ensure_loaded() -> None:
+    """首次使用时自动加载默认语料；已加载或已尝试过则直接返回。
+
+    调用 :func:`load_kaomojis` 显式指定过语料后，这里不会再覆盖它。
+    """
+    if not _state["loaded"]:
+        load_kaomojis()
 
 
-def kaomoji_len(s, i):
-    """从 s[i] 起匹配颜文字，返回最长匹配长度。无匹配返回 0。"""
-    trie = _state['trie']
+def kaomoji_count() -> int:
+    """返回当前已加载的颜文字条数。"""
+    return _state["count"]
+
+
+def kaomoji_len(s: str, i: int) -> int:
+    """从 ``s[i]`` 起匹配颜文字，返回最长匹配长度；无匹配返回 0。"""
+    trie = _state["trie"]
     if not trie or i >= len(s):
         return 0
     node = trie
@@ -90,13 +123,12 @@ def kaomoji_len(s, i):
     return best
 
 
-def is_kaomoji(text):
+def is_kaomoji(text: str) -> bool:
     """判断整段文本是否精确命中颜文字表。"""
     t = text.strip()
     if not t:
         return False
-    trie = _state['trie']
-    node = trie
+    node = _state["trie"]
     for c in t:
         nxt = node.get(c)
         if nxt is None:

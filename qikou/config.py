@@ -1,46 +1,79 @@
 # -*- coding: utf-8 -*-
 """切分配置。"""
 
+from __future__ import annotations
+
 import random
+from dataclasses import dataclass, replace
+
+__all__ = ["Config"]
 
 
+@dataclass
 class Config:
-    def __init__(self):
-        self.max_chars = 60
-        self.target_chars = 20
-        self.min_chars = 4
-        self.max_messages = 6
-        self.atomic_merge_prefix = 20
-        self.merge_max_chars = 60
+    """切分参数，所有字段都有默认值，按需覆盖即可。
 
-        self.base_ms = 500
-        self.per_char_ms = 30
-        self.jitter_ms = 200
-        self.min_ms = 300
-        self.max_ms = 1800
+    ::
 
-    def scale_for_length(self, total):
+        from qikou import Config, split
+
+        split(text, config=Config(max_chars=80, max_messages=10))
+
+    传入 :func:`~qikou.split` 的实例不会被修改——长度自适应由
+    :meth:`scaled_for_length` 返回一个新实例来完成。
+    """
+
+    #: 单条硬上限，超过触发切分。
+    max_chars: int = 60
+    #: 理想长度，切点优选位置。
+    target_chars: int = 20
+    #: 低于此长度尝试与相邻条目合并。
+    min_chars: int = 4
+    #: 条数上限（软）。结构类条目不参与合并，因此可能超过。
+    max_messages: int = 6
+    #: 短前缀 + 超长原子片段合并的阈值。
+    atomic_merge_prefix: int = 20
+    #: 合并后单条上限。
+    merge_max_chars: int = 60
+
+    #: 拟人延迟基础值（毫秒）。
+    base_ms: int = 500
+    #: 每字增加的延迟（毫秒）。
+    per_char_ms: int = 30
+    #: 随机抖动上限（毫秒）。
+    jitter_ms: int = 200
+    #: 延迟下限（毫秒）。
+    min_ms: int = 300
+    #: 延迟上限（毫秒）。
+    max_ms: int = 1800
+
+    def scaled_for_length(self, total: int) -> "Config":
+        """返回按文本总长放宽后的新配置，**不改动 self**。
+
+        长文本放宽单条上限可以避免碎成一地；合并上限同步放大，否则
+        长文本的相邻对全都超过它，条数上限永远够不到。
+        """
         if total <= 150:
-            return
+            return replace(self)
         if total <= 400:
-            self.max_chars = max(self.max_chars, 90)
-            self.target_chars = max(self.target_chars, 30)
+            max_chars, target_chars, max_messages = 90, 30, self.max_messages
         elif total <= 800:
-            self.max_chars = max(self.max_chars, 120)
-            self.target_chars = max(self.target_chars, 45)
-            self.max_messages = max(self.max_messages, 8)
+            max_chars, target_chars, max_messages = 120, 45, 8
         else:
-            self.max_chars = max(self.max_chars, 160)
-            self.target_chars = max(self.target_chars, 60)
-            self.max_messages = max(self.max_messages, 10)
-        # 合并后的单条同样受「单条上限」约束。
-        # 若 merge_max_chars 固定在 60，档位放大后长文本的相邻对全都超过
-        # 60，合并会在半路停住，max_messages 永远够不到
-        # （866 字的输入产出 21 条，而该档位上限是 10 条）。
-        self.merge_max_chars = max(self.merge_max_chars, self.max_chars)
+            max_chars, target_chars, max_messages = 160, 60, 10
 
-    def delay_for(self, msg):
-        d = self.base_ms + len(msg) * self.per_char_ms \
+        new_max = max(self.max_chars, max_chars)
+        return replace(
+            self,
+            max_chars=new_max,
+            target_chars=max(self.target_chars, target_chars),
+            max_messages=max(self.max_messages, max_messages),
+            merge_max_chars=max(self.merge_max_chars, new_max),
+        )
+
+    def delay_for(self, text: str) -> float:
+        """返回这条消息的建议发送延迟（秒）：按字数加随机抖动。"""
+        d = self.base_ms + len(text) * self.per_char_ms \
             + random.randint(0, self.jitter_ms)
         d = max(self.min_ms, min(d, self.max_ms))
         return d / 1000.0

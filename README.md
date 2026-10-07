@@ -184,43 +184,63 @@ python -m qikou --help
 ## 作为库使用
 
 ```python
-from qikou import split_reply, load_kaomojis, Config
+from qikou import split
 
-# 1. 加载颜文字表（一次性，程序启动时调用）
-load_kaomojis()
-
-# 2. 切分
 text = "好的，我来帮你规划。首先你需要确定目标。然后每天练习。最后定期复习。"
-msgs, cfg = split_reply(text)
 
-# 3. 使用结果
-for i, m in enumerate(msgs, 1):
-    delay = cfg.delay_for(m)
-    print(f"[{i}] {m}  (等待 {delay:.2f}s)")
+for message in split(text):
+    print(message)
 ```
+
+`split()` 返回 `list[str]`。颜文字语料在首次调用时**自动加载**（约 0.1 秒），通常不需要手动处理。
+
+### 需要发送延迟时
+
+```python
+from qikou import split_with_delays
+
+for m in split_with_delays(text):
+    print(m.text, "  等待 %.2fs" % m.delay)
+    # send(m.text)
+    # time.sleep(m.delay)
+```
+
+`Message` 是 frozen dataclass，只有 `text` 和 `delay`（秒）两个字段。
 
 ### 自定义配置
 
 ```python
-from qikou import split_reply, Config
+from qikou import Config, split
 
-cfg = Config()
-cfg.max_chars = 80       # 单条硬上限
-cfg.target_chars = 30    # 理想长度
-cfg.min_chars = 5        # 低于此长度尝试合并
-cfg.max_messages = 8     # 最多几条
-
-msgs, cfg = split_reply(text, cfg=cfg)
+config = Config(
+    max_chars=80,      # 单条硬上限
+    target_chars=30,   # 理想长度
+    min_chars=5,       # 低于此长度尝试合并
+    max_messages=8,    # 条数上限（软）
+)
+messages = split(text, config=config)   # config 不会被修改
 ```
 
-### 不带颜文字表也能跑
+`Config` 是 dataclass，也可以用 `dataclasses.replace()` 派生新配置：
 
 ```python
-from qikou import split_reply
+import dataclasses
+from qikou import Config
 
-# 不调用 load_kaomojis() 也能用，只是不识别颜文字
-msgs, cfg = split_reply("hello world. how are you?")
+loose = dataclasses.replace(Config(), max_chars=200, target_chars=80)
 ```
+
+### 预先加载或替换语料
+
+```python
+from qikou import load_kaomojis, kaomoji_count
+
+load_kaomojis()                    # 预加载包内语料，返回条数
+load_kaomojis("my-kaomojis.txt")   # 换成自己的语料
+print(kaomoji_count())             # 当前已加载的条数
+```
+
+语料缺失只在日志里记一条 warning，切分继续，只是不再识别颜文字。
 
 ---
 
@@ -244,7 +264,7 @@ msgs, cfg = split_reply("hello world. how are you?")
 
 **`max_messages` 是软上限**：超限时合并最短相邻对，但列表项、标题、表格、水平线、独立代码块 / URL、以波浪号结尾的条目都不参与合并——所以结构多的回复，最终条数可能超过这个值。纯文本回复则能压缩到上限以内：合并后的单条不超过 `merge_max_chars`，而它随档位一并放大（见下表）。
 
-**长度自适应**：`split_reply()` 会根据总长自动放宽单条上限与条数上限：
+**长度自适应**：`split()` 会根据总长自动放宽单条上限与条数上限：
 
 | 总长 | max_chars | target_chars | max_messages | merge_max_chars |
 |---|---|---|---|---|
@@ -294,8 +314,10 @@ qikou/
 │   ├── kaomoji.py              # 颜文字 Trie
 │   ├── protect.py              # 特殊片段保护
 │   ├── postprocess.py          # 后处理
+│   ├── message.py              # Message 结果类型
 │   ├── splitter.py             # 核心切分逻辑
-│   └── kaomojis.txt            # 颜文字语料（随 wheel 分发）
+│   ├── kaomojis.txt            # 颜文字语料（随 wheel 分发）
+│   └── py.typed                # PEP 561 类型标记
 ├── tests/
 │   ├── test.txt                # 测试用例
 │   └── results/                # 测试报告（自动生成）
@@ -318,6 +340,7 @@ qikou/
 | `kaomoji.py` | 颜文字 Trie 加载与匹配 |
 | `protect.py` | 代码块 / URL 占位符保护与还原 |
 | `postprocess.py` | 未闭合 Markdown 与引号的补全 |
+| `message.py` | `Message` 结果类型（正文 + 建议延迟） |
 | `splitter.py` | 分句、打包、打分、切点查找、主入口 |
 | `cli.py` | 命令行解析、手动输入、自动测试 |
 

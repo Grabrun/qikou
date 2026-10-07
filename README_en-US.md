@@ -188,43 +188,63 @@ python -m qikou --help
 ## Using It as a Library
 
 ```python
-from qikou import split_reply, load_kaomojis, Config
+from qikou import split
 
-# 1. Load the kaomoji table (once, at program start)
-load_kaomojis()
-
-# 2. Split
 text = "好的，我来帮你规划。首先你需要确定目标。然后每天练习。最后定期复习。"
-msgs, cfg = split_reply(text)
 
-# 3. Use the result
-for i, m in enumerate(msgs, 1):
-    delay = cfg.delay_for(m)
-    print(f"[{i}] {m}  (waiting {delay:.2f}s)")
+for message in split(text):
+    print(message)
 ```
+
+`split()` returns `list[str]`. The kaomoji corpus is **loaded automatically** on first use (about 0.1 s); you normally never have to touch it.
+
+### When you need the send delays
+
+```python
+from qikou import split_with_delays
+
+for m in split_with_delays(text):
+    print(m.text, "  wait %.2fs" % m.delay)
+    # send(m.text)
+    # time.sleep(m.delay)
+```
+
+`Message` is a frozen dataclass with just `text` and `delay` (seconds).
 
 ### Custom configuration
 
 ```python
-from qikou import split_reply, Config
+from qikou import Config, split
 
-cfg = Config()
-cfg.max_chars = 80       # hard cap per message
-cfg.target_chars = 30    # ideal length
-cfg.min_chars = 5        # below this, try to merge
-cfg.max_messages = 8     # cap on the number of messages
-
-msgs, cfg = split_reply(text, cfg=cfg)
+config = Config(
+    max_chars=80,      # hard cap per message
+    target_chars=30,   # ideal length
+    min_chars=5,       # below this, try to merge
+    max_messages=8,    # soft cap on the number of messages
+)
+messages = split(text, config=config)   # config is never modified
 ```
 
-### It also runs without the kaomoji table
+`Config` is a dataclass, so `dataclasses.replace()` gives you a derived copy:
 
 ```python
-from qikou import split_reply
+import dataclasses
+from qikou import Config
 
-# Works without load_kaomojis(); kaomoji simply are not recognised.
-msgs, cfg = split_reply("hello world. how are you?")
+loose = dataclasses.replace(Config(), max_chars=200, target_chars=80)
 ```
+
+### Preloading or replacing the corpus
+
+```python
+from qikou import load_kaomojis, kaomoji_count
+
+load_kaomojis()                    # preload the bundled corpus, returns the count
+load_kaomojis("my-kaomojis.txt")   # use your own
+print(kaomoji_count())             # entries currently loaded
+```
+
+A missing corpus only logs a warning; splitting continues without kaomoji recognition.
 
 ---
 
@@ -248,7 +268,7 @@ Every parameter of the `Config` class:
 
 **`max_messages` is a soft cap**: over it the shortest adjacent pair is merged, but list items, headings, tables, horizontal rules, standalone code blocks / URLs, and entries ending in a tilde never take part in a merge — so a reply full of structure can end up above this value. Plain prose does reach the cap: a merged message stays within `merge_max_chars`, which is scaled up together with the tier (see the table below).
 
-**Adaptive length**: `split_reply()` relaxes the per-message cap and the message-count cap according to the total length:
+**Adaptive length**: `split()` relaxes the per-message cap and the message-count cap according to the total length:
 
 | Total length | max_chars | target_chars | max_messages | merge_max_chars |
 |---|---|---|---|---|
@@ -259,7 +279,7 @@ Every parameter of the `Config` class:
 
 To shift the overall feel (choppier or longer), change `max_chars` and `target_chars`.
 
-`split_reply()` never modifies the `Config` you pass in; the scaled copy it returns is the one to use for delays.
+`split()` never modifies the `Config` you pass in; the scaling is applied to an internal copy.
 
 ---
 
@@ -302,8 +322,10 @@ qikou/
 │   ├── kaomoji.py              # kaomoji trie
 │   ├── protect.py              # code block / URL placeholder protection
 │   ├── postprocess.py          # closing unclosed markers
+│   ├── message.py              # Message result type
 │   ├── splitter.py             # core splitting logic
-│   └── kaomojis.txt            # kaomoji corpus, 55,213 entries (shipped in the wheel)
+│   ├── kaomojis.txt            # kaomoji corpus, 55,213 entries (shipped in the wheel)
+│   └── py.typed                # PEP 561 marker
 ├── tests/
 │   ├── test.txt                # test cases (inputs only)
 │   └── results/                # generated reports (not tracked)
@@ -327,6 +349,7 @@ qikou/
 | `kaomoji.py` | loading and matching the kaomoji trie |
 | `protect.py` | protecting and restoring code block / URL placeholders |
 | `postprocess.py` | closing unclosed Markdown and quotes |
+| `message.py` | the `Message` result type (text + suggested delay) |
 | `splitter.py` | sentence splitting, packing, scoring, cut search, main entry point |
 | `cli.py` | argument parsing, manual input, automated test |
 

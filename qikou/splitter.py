@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
-"""气口 v2.0 核心切分逻辑。"""
+"""气口核心切分逻辑。"""
 
-import copy
+from __future__ import annotations
+
 import re
+from typing import List, Optional, Tuple
 
 from . import kaomoji
 from .config import Config
+from .message import Message
 from .lexicon import (
     EN_ABBREV, ZH_TAIL_BAD, ZH_HEAD_BAD,
     EN_TAIL_BAD, EN_HEAD_BAD,
@@ -526,11 +529,14 @@ def enforce_max_messages(msgs, cfg, blocks):
 # 主入口
 # ============================================================
 
-def split_reply(text, cfg=None):
-    # 不原地改写调用方传入的 Config：长度自适应会放大 max_chars /
-    # target_chars / max_messages，若直接改这个对象，同一个 Config 复用
-    # 多次时会单调放宽，且与"无副作用"的约定冲突。
-    cfg = Config() if cfg is None else copy.copy(cfg)
+def _split(text: str,
+           config: Optional[Config] = None) -> Tuple[List[str], Config]:
+    """内部入口：返回 (消息列表, 生效的配置)。
+
+    ``config`` 不会被修改；返回的是按长度缩放后的新实例。
+    """
+    kaomoji.ensure_loaded()
+    cfg = Config() if config is None else config
 
     text = text.strip()
     if not text:
@@ -538,7 +544,7 @@ def split_reply(text, cfg=None):
 
     protected, special_blocks = protect_special(text)
     total = visible_len(protected, special_blocks)
-    cfg.scale_for_length(total)
+    cfg = cfg.scaled_for_length(total)
 
     units = build_units(protected)
     msgs = pack_units(units, cfg, special_blocks)
@@ -547,3 +553,36 @@ def split_reply(text, cfg=None):
     out = [restore_special(m[0], special_blocks) for m in msgs]
     out = [postprocess_message(m) for m in out]
     return out, cfg
+
+
+def split(text: str, config: Optional[Config] = None) -> List[str]:
+    """把一段文本切成若干条短消息。
+
+    Args:
+        text: 待切分的文本。
+        config: 可选配置，不会被修改。
+
+    Returns:
+        消息列表；输入为空或纯空白时返回空列表。
+
+    ::
+
+        for message in split(reply):
+            send(message)
+    """
+    messages, _ = _split(text, config)
+    return messages
+
+
+def split_with_delays(text: str,
+                      config: Optional[Config] = None) -> List[Message]:
+    """同 :func:`split`，但每条消息附带建议发送延迟（秒）。
+
+    ::
+
+        for m in split_with_delays(reply):
+            send(m.text)
+            time.sleep(m.delay)
+    """
+    messages, cfg = _split(text, config)
+    return [Message(text=m, delay=cfg.delay_for(m)) for m in messages]

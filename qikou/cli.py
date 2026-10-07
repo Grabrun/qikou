@@ -7,7 +7,8 @@ import sys
 import time
 
 from . import kaomoji
-from .splitter import split_reply
+from .config import Config
+from .splitter import split, split_with_delays
 
 
 BANNER = "=" * 52
@@ -23,28 +24,27 @@ TEST_FILE = os.path.join(_REPO, 'tests', 'test.txt') if _REPO else None
 RESULT_DIR = os.path.join(_REPO, 'tests', 'results') if _REPO else None
 
 
-def print_detailed(msgs, cfg):
+def print_detailed(messages, cfg):
     print()
     print(BANNER)
-    print(" 切分结果：%d 条" % len(msgs))
+    print(" 切分结果：%d 条" % len(messages))
     print(" 参数：max=%d  target=%d  min=%d  max_messages=%d"
           % (cfg.max_chars, cfg.target_chars,
              cfg.min_chars, cfg.max_messages))
     print(BANNER)
-    for i, m in enumerate(msgs, 1):
+    for i, m in enumerate(messages, 1):
         print()
         print("─── [%d/%d]  %d 字 ───"
-              % (i, len(msgs), len(m)))
-        print(m)
+              % (i, len(messages), len(m.text)))
+        print(m.text)
     print()
     print("-" * 52)
     print("模拟发送时间轴：")
     t = 0.0
-    for i, m in enumerate(msgs, 1):
-        d = cfg.delay_for(m)
+    for i, m in enumerate(messages, 1):
         print("  t=%5.2fs  第 %d 条（%d 字，等待 %.2fs）"
-              % (t, i, len(m), d))
-        t += d
+              % (t, i, len(m.text), m.delay))
+        t += m.delay
     print("  t=%5.2fs  发送完毕" % t)
 
 
@@ -117,7 +117,7 @@ def run_auto_test(path, out_path=None):
         f.write(" 用例数  ：%d\n" % len(cases))
         f.write(BANNER + "\n")
         for idx, (name, text) in enumerate(cases, 1):
-            msgs, cfg = split_reply(text)
+            msgs = split(text)
             total_msgs += len(msgs)
             write_case_report(f, idx, len(cases), name, text, msgs)
             print("  [%2d/%2d] %s  →  %d 条" %
@@ -159,8 +159,9 @@ def manual_mode():
         if not text.strip():
             print("（没有输入内容）")
         else:
-            msgs, cfg = split_reply(text)
-            print_detailed(msgs, cfg)
+            messages = split_with_delays(text)
+            cfg = Config().scaled_for_length(len(text.strip()))
+            print_detailed(messages, cfg)
         print()
         try:
             again = input("继续输入？(y/N) ").strip().lower()
@@ -180,17 +181,18 @@ def print_help():
 
 
 def load_kaomojis_checked():
-    """加载颜文字表；加载为空时明确报错。
+    """加载颜文字语料；加载为空时明确报错。
 
     语料缺失时切分仍能跑，只是颜文字不再被识别——结果悄悄变差。
     这里把它变成一个看得见的失败。
     """
-    kaomoji.load_kaomojis()
-    if kaomoji.kaomoji_count() <= 0:
+    n = kaomoji.load_kaomojis()
+    if n <= 0:
         print()
-        print("[错误] 颜文字表为空（0 条），切分结果会明显变差。")
+        print("[错误] 颜文字语料为空（0 条），切分结果会明显变差。")
         print("       预期语料文件：%s" % kaomoji.default_path())
         return False
+    print("[信息] 已加载 %d 条颜文字" % n)
     return True
 
 

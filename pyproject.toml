@@ -35,6 +35,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Topic :: Text Processing :: Linguistic",
+    "Typing :: Typed",
 ]
 dependencies = []
 
@@ -50,7 +51,7 @@ qikou = "qikou.cli:main"
 packages = ["qikou"]
 
 [tool.setuptools.package-data]
-qikou = ["*.txt"]
+qikou = ["*.txt", "py.typed"]
 
 [tool.setuptools.dynamic]
 version = { attr = "qikou.__version__" }
