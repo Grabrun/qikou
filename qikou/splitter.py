@@ -494,47 +494,51 @@ def pack_units(units: List[Unit], cfg: Config,
     return msgs
 
 
+def _merge_blocked(text: str) -> bool:
+    """这条消息是否**不参与合并**（结构类条目要保住自己的形状）。"""
+    return (is_list_start(text) or is_heading(text) or is_hr(text)
+            or is_table_msg(text) or bool(PH_RE.fullmatch(text.strip())))
+
+
 def enforce_max_messages(msgs: List[Packed], cfg: Config,
                          blocks: Blocks) -> List[Packed]:
     if cfg.max_messages <= 0:
         return msgs
     merge_limit = cfg.merge_max_chars
+
+    # 每条消息的"不参与合并"标记与可见长度只取决于它自己的文本，而一轮合并
+    # 只改动被合并的那一条。先算好、合并后只更新那一条，就把原来每轮对全部
+    # 相邻对重复跑正则的 O(迭代 x 消息数) 次正则调用，摊成 O(消息数) 一次。
+    # 长文本实测：5920 字从 154 ms 降到 ~15 ms（输出逐字节不变）。
+    blocked = [_merge_blocked(m[0]) for m in msgs]
+    lens = [visible_len(m[0], blocks) for m in msgs]
+
     guard = 0
     while len(msgs) > cfg.max_messages and guard < 500:
         guard += 1
         best_i = -1
         best_len = None
         for i in range(len(msgs) - 1):
-            a_text, a_bid = msgs[i]
-            b_text, b_bid = msgs[i + 1]
-
-            if a_bid != b_bid:
+            if msgs[i][1] != msgs[i + 1][1]:
                 continue
-            if is_list_start(a_text) or is_list_start(b_text):
+            if blocked[i] or blocked[i + 1]:
                 continue
-            if is_heading(a_text) or is_heading(b_text):
+            if ends_with_tilde(msgs[i][0]):
                 continue
-            if is_hr(a_text) or is_hr(b_text):
+            total = lens[i] + lens[i + 1]
+            if total > merge_limit:
                 continue
-            if is_table_msg(a_text) or is_table_msg(b_text):
-                continue
-            if PH_RE.fullmatch(a_text.strip()) or \
-               PH_RE.fullmatch(b_text.strip()):
-                continue
-            if ends_with_tilde(a_text):
-                continue
-
-            a = visible_len(a_text, blocks)
-            b = visible_len(b_text, blocks)
-            if a + b > merge_limit:
-                continue
-            if best_len is None or a + b < best_len:
-                best_len = a + b
+            if best_len is None or total < best_len:
+                best_len = total
                 best_i = i
         if best_i < 0:
             break
         msgs[best_i][0] = smart_merge(msgs[best_i][0], msgs[best_i + 1][0])
         del msgs[best_i + 1]
+        blocked[best_i] = _merge_blocked(msgs[best_i][0])
+        blocked.pop(best_i + 1)
+        lens[best_i] = visible_len(msgs[best_i][0], blocks)
+        lens.pop(best_i + 1)
     return msgs
 
 

@@ -313,3 +313,75 @@ def test_setup_streams_is_safe():
     from qikou.cli import _setup_streams
     _setup_streams()          # 不该抛异常，也不该改变正常流的行为
     assert True
+
+
+# ============================================================
+# 规则与打分系统审计（2026-10）发现的缺陷
+# ============================================================
+
+def test_kaomoji_immediately_before_url_does_not_crash():
+    """颜文字紧贴 URL/代码块曾抛 TypeError。
+
+    根因：kaomoji trie 用字符 "\\x00" 当终止标记，而 \\x00 正是
+    protect_special 的占位符分隔符——node.get("\\x00") 会取到终止标记
+    True，下一轮 `_END in True` 直接崩。
+    """
+    assert split("你好。 (T_T)https://a.com/x") == ["你好。 (T_T)", "https://a.com/x"]
+    assert split("你好。 (T_T)```code```") == ["你好。 (T_T)", "```code```"]
+    assert split("太好了！ (*´ω`*)https://a.com/x") == [
+        "太好了！ (*´ω`*)", "https://a.com/x"]
+
+
+def test_url_immediately_before_code_block_keeps_both():
+    """URL 紧贴代码块时，URL 匹配曾一口吞掉占位符。
+
+    后果是代码块整段消失、输出里留下字面的 \\x00N\\x00。
+    """
+    text = "https://example.com/a```code```"
+    assert "".join(split(text)) == text
+    assert "\x00" not in "".join(split(text))
+
+
+def test_protect_restore_roundtrip():
+    """保护/还原必须无损，包括 URL 与代码块相邻这种边界。"""
+    from qikou.protect import protect_special, restore_special
+    for text in ("普通文本。",
+                 "https://example.com/a```code```",
+                 "```py\ncode```",
+                 "看 https://a.b/c 和 `x`",
+                 "a```b```c https://d.e/f"):
+        prot, blocks = protect_special(text)
+        assert restore_special(prot, blocks) == text
+
+
+def test_literal_nul_in_input_does_not_crash():
+    """输入自带 \\x00N\\x00（越界占位符）曾抛 IndexError。
+
+    只要求不崩溃；往返无损不在承诺范围内（见 protect_special 的已知限制）。
+    """
+    assert split("https://a.com/x \x009\x00")
+    assert split("\x000\x00")
+
+
+def test_no_character_loss_on_adversarial_input():
+    """乱码输入不得丢字（只允许补全未闭合标记）。"""
+    from collections import Counter
+    markers = set('*_"’”’「」』『')
+    samples = [
+        "(]`~Ac([chttps://a.b/ca**(、**\n}2[ba；：。，)”\t～b2…「",
+        '`[；bhttps://a.b/c～`“(T_T)https://a.b/c”_\n#**）C}',
+        "```\n" + "x。" * 40 + "\n```",
+        "**" + "很长。" * 50 + "**",
+    ]
+    for text in samples:
+        out = "".join(split(text))
+        ci, co = Counter(text), Counter(out)
+        for ch, n in ci.items():
+            if not ch.isspace():
+                assert co.get(ch, 0) >= n, (
+                    "%r 中的 %r 从 %d 个变成 %d 个" % (text[:30], ch, n, co.get(ch, 0)))
+        added = {c: co.get(c, 0) - ci.get(c, 0) for c in set(co) | set(ci)
+                 if co.get(c, 0) > ci.get(c, 0)}
+        illegal = {c: v for c, v in added.items()
+                   if c not in markers and not c.isspace()}
+        assert not illegal, "凭空多出 %r" % (illegal,)

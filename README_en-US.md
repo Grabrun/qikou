@@ -302,7 +302,15 @@ Every parameter of the `Config` class:
 | `atomic_merge_prefix` | 20 | Threshold for merging a short prefix with a long atomic fragment |
 | `merge_max_chars` | 60 | Cap after a merge (scaled up to that tier's `max_chars`) |
 
-**`max_messages` is a soft cap**: over it the shortest adjacent pair is merged, but list items, headings, tables, horizontal rules, standalone code blocks / URLs, and entries ending in a tilde never take part in a merge — so a reply full of structure can end up above this value. Plain prose does reach the cap: a merged message stays within `merge_max_chars`, which is scaled up together with the tier (see the table below).
+**`max_messages` is a soft cap, and it competes with the per-message cap**: over the limit the shortest adjacent pair is merged, and a merged message stays within `merge_max_chars`. Once the total exceeds `max_messages × merge_max_chars` the two constraints **cannot both hold**; the implementation keeps the length limit and the real count lands around `⌈total / merge_max_chars⌉`. Measured (the >800-character tier: 10 messages, 160 characters each):
+
+| Total | Actual messages | Note |
+|---|---|---|
+| 840 chars | 10 | meets the cap |
+| 1680 chars | 20 | above 1600 characters it must overflow |
+| 3360 chars | 40 | same |
+
+On top of that, list items, headings, tables, horizontal rules, standalone code blocks / URLs, and entries ending in a tilde never take part in a merge, so a reply full of structure can end up higher still.
 
 **Adaptive length**: `split()` relaxes the per-message cap and the message-count cap according to the total length:
 

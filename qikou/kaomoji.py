@@ -24,7 +24,11 @@ logger = logging.getLogger(__name__)
 
 _PATH = Union[str, "os.PathLike[str]"]
 
-_END = "\x00"
+# 终止标记。刻意用**对象**而不是字符：早先用 "\x00"，而 \x00 恰好是
+# protect_special 的占位符分隔符，于是"颜文字紧接着 URL 或代码块"时，
+# node.get("\x00") 会取到 True 这个终止标记，下一轮 `_END in True`
+# 直接抛 TypeError。触发输入例如 "你好。 (T_T)https://a.com/x"。
+_END: Any = object()
 KAOMOJI_FILE = "kaomojis.txt"
 
 _state: Dict[str, Any] = {
