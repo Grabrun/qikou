@@ -386,16 +386,15 @@ ChatSplit/
 ├── tests/
 │   ├── test.txt                # test cases (inputs only)
 │   ├── test_qikou.py           # pytest assertions
+│   ├── golden.py               # golden-hash check
+│   ├── baseline/cases.sha256   # baseline for 205 case outputs
 │   └── results/                # generated reports (not tracked)
 ├── docs/
 │   ├── README.md               # documentation index (Chinese)
 │   ├── project-layout.md       # layout conventions and maintenance rules (Chinese)
+│   ├── audit/                  # deep-audit report and figures (Chinese)
 │   └── design/
-│       ├── v3.0-design.md      # current v3.0 plan (Chinese)
-│       └── v3.0-design-draft-1.md   # early v3.0 draft, archived (Chinese)
-├── legacy/                     # archived single-file versions
-│   ├── ChatSplit-v1.0.py
-│   └── ChatSplit-v2.0.py
+│       └── v3.0-design.md      # current v3.0 plan (Chinese)
 ├── local/                      # machine-local, never committed (see local/README.md)
 ├── dist/                       # build artifacts (not tracked)
 ├── pyproject.toml              # packaging metadata (PEP 621)
@@ -479,7 +478,7 @@ Fixes from the 2026-11 deep audit. Behaviour is unchanged on the 205-case corpus
 - modularised: patterns / lexicon / config / kaomoji / protect / postprocess / splitter / cli
 - 120 test cases covering a broad range of edge cases, all running without error
 - command: `python -m qikou`
-- `ChatSplit-v1.0.py` / `ChatSplit-v2.0.py` archived under `legacy/`
+- `ChatSplit-v1.0.py` / `ChatSplit-v2.0.py` archived under `local/archive/legacy-v1-v2/` (kept locally, not committed)
 - human-like delay timeline (removed in v2.1)
 
 ### v1.0

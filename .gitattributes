@@ -9,3 +9,10 @@
 # 历史遗留的不一致行尾（文档 CRLF、源码 LF）已在「统一行尾为 LF」提交中一次性修正。
 
 * text=auto eol=lf
+
+# 二进制文件：不做行尾转换，不尝试文本 diff
+*.png binary
+*.ico binary
+*.whl binary
+*.gz binary
+*.zip binary

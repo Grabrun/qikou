@@ -378,22 +378,22 @@ ChatSplit/
 ├── tests/
 │   ├── test.txt                # 人工复核用例
 │   ├── test_qikou.py           # pytest 断言测试
+│   ├── golden.py               # 金标哈希校验
+│   ├── baseline/cases.sha256   # 205 条用例输出的基线
 │   └── results/                # 测试报告（自动生成，不入库）
 ├── docs/
 │   ├── README.md               # 文档索引
 │   ├── project-layout.md       # 目录约定与维护规则
+│   ├── audit/                  # 深度审计报告与配图
 │   └── design/
-│       ├── v3.0-design.md      # v3.0 方案（现行）
-│       └── v3.0-design-draft-1.md   # v3.0 早期草案（已归档）
-├── legacy/                     # 旧版存档
-│   ├── ChatSplit-v1.0.py
-│   └── ChatSplit-v2.0.py
+│       └── v3.0-design.md      # v3.0 方案（现行）
 ├── local/                      # 本机私有，不入库（见 local/README.md）
 ├── dist/                       # 构建产物（不入库）
 ├── pyproject.toml              # 打包配置（PEP 621）
 ├── MANIFEST.in                 # sdist 内容清单
 ├── README.md                   # 中文文档
-└── README_en-US.md             # 英文文档
+├── README_en-US.md             # 英文文档
+└── LICENSE                     # MIT
 ```
 
 ### 各模块职责
@@ -470,7 +470,7 @@ ChatSplit/
 - 模块化：patterns / lexicon / config / kaomoji / protect / postprocess / splitter / cli
 - 上百个测试用例，覆盖各类边界，全部通过
 - 命令：`python -m qikou`
-- 遗留 `ChatSplit-v1.0.py` / `ChatSplit-v2.0.py` 归档到 `legacy/`
+- 遗留 `ChatSplit-v1.0.py` / `ChatSplit-v2.0.py` 已归档到 `local/archive/legacy-v1-v2/`（本机保留，不入库）
 - 拟人延迟时间轴（已在 v2.1 移除）
 
 ### v1.0

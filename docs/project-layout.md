@@ -13,24 +13,23 @@ ChatSplit/
 ├── tests/
 │   ├── test.txt                # 205 条人工复核用例
 │   ├── test_qikou.py           # pytest 断言测试
+│   ├── golden.py               # 金标哈希校验
+│   ├── baseline/cases.sha256   # 用例输出基线
 │   └── results/                # qikou test 输出（自动生成，不入库）
 ├── docs/
 │   ├── README.md               # 文档索引
 │   ├── project-layout.md       # 本文件
 │   ├── audit/                  # 审计报告与配图
 │   └── design/
-│       ├── v3.0-design.md      # v3.0 方案（现行）
-│       └── v3.0-design-draft-1.md  # v3.0 早期草案（已归档）
-├── legacy/                     # v1.0 / v2.0 单文件存档
-│   └── README.md               # 存档说明（含失效的语料路径）
+│       └── v3.0-design.md      # v3.0 方案（现行）
 ├── local/                      # 本机私有，整体不入库
 │   ├── README.md
+│   ├── archive/                # 旧版单文件脚本、v3.0 早期草案
 │   ├── kaomoji-sources/        # 4 个上游导出（≈14.4 MB）
 │   ├── test-reports/           # 历史测试报告（≈1.7 MB）
 │   ├── handover/               # 交接文档快照
 │   └── prompt/                 # 个人提示词 + 其独立仓库
 ├── dist/                       # 构建产物（.whl / .tar.gz，不入库）
-├── .venv-build/                # 构建与检查用虚拟环境（Python 3.14，不入库）
 └── 根级文件：pyproject.toml / MANIFEST.in / .gitattributes / .gitignore /
    README.md / README_en-US.md / CHANGELOG.md / CONTRIBUTING.md / SECURITY.md / LICENSE
 ```
@@ -42,11 +41,11 @@ ChatSplit/
 | `qikou/` | 源码与语料，唯一参与打包的目录 | 是 | 否 |
 | `tests/` | 断言测试与人工复核用例 | 是（`results/` 除外） | 否 |
 | `tests/results/` | `qikou test` 的当次输出，带时间戳 | 否 | 是 |
-| `docs/` | 设计文档、目录约定 | 是 | 否（归档文档除外） |
-| `legacy/` | 旧版单文件实现，历史参考 | 是 | 视作历史，别删 |
-| `local/` | 本机私有资产（数据存档、历史报告、个人资料） | 否 | `test-reports/` 可删 |
+| `docs/` | 设计文档、审计报告、目录约定 | 是 | 否 |
+| `local/` | 本机私有资产（数据存档、历史报告、旧版脚本、个人资料） | 否 | `test-reports/` 可删 |
+| `local/archive/` | 已被取代或跑不起来的旧物：v1.0/v2.0 单文件、v3.0 早期草案 | 否 | 确认后删 |
 | `dist/` | 构建产物 | 否 | 是 |
-| `.venv-build/` | 构建/类型检查环境 | 否 | 是（重建见第 5 节） |
+| `.venv/` | 开发/测试/类型检查环境（`.gitignore` 里 `.venv*/` 一并忽略） | 否 | 是（重建见第 5 节） |
 | `.git/`、`.github/` | 版本库与 CI | — | 否 |
 
 ## 3. 命名约定
@@ -57,7 +56,7 @@ ChatSplit/
 - **测试报告**：`test_result_<YYYYMMDD>_<HHMMSS>.txt`，由 CLI 生成，**不要手工改名**。
 - **发布产物**：`qikou-<版本>-py3-none-any.whl` / `qikou-<版本>.tar.gz`，
   版本号取自 `qikou/__init__.py` 的 `__version__`，两者必须一致。
-- **目录名**：小写，单数或类别名（`docs/` `tests/` `legacy/`），不建"杂项""其他"这类筐。
+- **目录名**：小写，单数或类别名（`docs/` `tests/` `qikou/`），不建"杂项""其他"这类筐。
 
 ## 4. 维护规则
 
@@ -75,19 +74,20 @@ ChatSplit/
 ## 5. 常用命令
 
 ```bash
-# 环境（本机已有 .venv-build，缺了就重建）
-python -m venv .venv-build
-.venv-build/Scripts/python.exe -m pip install -e ".[dev]"
+# 环境（本机已有 .venv，缺了就重建）
+python -m venv .venv
+.venv/Scripts/python.exe -m pip install -e ".[dev]"
 
-# 断言测试 / 类型检查
-.venv-build/Scripts/python.exe -m pytest -q          # 49 passed
-.venv-build/Scripts/python.exe -m mypy              # strict，零报错
+# 断言测试 / 类型检查 / 金标
+.venv/Scripts/python.exe -m pytest -q                    # 65 passed
+.venv/Scripts/python.exe -m mypy                         # strict，零报错
+.venv/Scripts/python.exe tests/golden.py --check         # 205 条输出一致
 
 # 人工复核报告（写入 tests/results/）
-.venv-build/Scripts/python.exe -m qikou test
+.venv/Scripts/python.exe -m qikou test
 
 # 构建
-.venv-build/Scripts/python.exe -m build
+.venv/Scripts/python.exe -m build
 ```
 
 ## 6. 整理记录
@@ -114,3 +114,20 @@ python -m venv .venv-build
 
 **未改动**：`qikou/` 源码与语料、`tests/` 用例、`legacy/` 两个旧脚本、`dist/`
 现有 2.2.1 产物、`.venv-build`（重建成本高，且已被忽略）。
+
+### 2026-11-25 仓库精简（2.2.2 发布后）
+
+原则：仓库只留「能构建、能测试、能分发、能解释设计」的内容；历史与草稿进
+`local/archive/`，本机保留但不入库。跟踪文件 37 → 33。
+
+| 动作 | 对象 | 处置 |
+|---|---|---|
+| 移出 | `legacy/`（v1.0 / v2.0 单文件，共 3 个文件） | → `local/archive/legacy-v1-v2/`，`git rm --cached` |
+| 移出 | `docs/design/v3.0-design-draft-1.md`（已被合并稿取代） | → `local/archive/v3.0-design-draft-1.md` |
+| 保留 | `docs/audit/`（审计报告 + 2 张配图） | 作为 2.2.2 行为变更的依据，Release 说明引用 |
+| 保留 | `qikou/kaomojis.txt`（1.28 MB） | 运行时语料，随 wheel 分发 |
+| 同步 | 中英文 README 目录树、`docs/README.md` 索引、本文件表格与命令 | — |
+| 修正 | 第 5 节命令：`.venv-build` → `.venv`，`49 passed` → `65 passed` | 与 2.2.2 现状一致 |
+
+判断依据：旧版脚本按已失效的 `Kaomoji/kaomojis.txt` 路径读音，本身跑不起来；
+v3.0 草案的全部有效内容已并入 `v3.0-design.md`；两者都能从 git 历史取回。
