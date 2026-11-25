@@ -10,6 +10,9 @@ jobs:
   test:
     name: test (${{ matrix.os }}, Python ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
+    env:
+      # Windows 控制台默认 cp1252，中文输出会崩；统一按 UTF-8 写日志。
+      PYTHONIOENCODING: utf-8
     strategy:
       fail-fast: false
       matrix:
@@ -19,6 +22,10 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
         exclude:
+          # ubuntu-latest 已是 26.04，setup-python 只提供 3.9 的 22.04/24.04
+          # 预编译包；3.9 单独挂到 ubuntu-24.04 上跑。
+          - os: ubuntu-latest
+            python-version: "3.9"
           # Windows 只跑首尾两个版本：路径与大小写相关缺陷在两端就够暴露，
           # 全矩阵会把 job 数翻倍。
           - os: windows-latest
@@ -27,6 +34,9 @@ jobs:
             python-version: "3.11"
           - os: windows-latest
             python-version: "3.12"
+        include:
+          - os: ubuntu-24.04
+            python-version: "3.9"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

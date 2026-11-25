@@ -55,7 +55,23 @@ def write_baseline(value: str) -> None:
         f.write(value + "\n")
 
 
+def _utf8_streams() -> None:
+    """Windows 控制台默认 cp1252，打印中文会抛 UnicodeEncodeError。
+
+    CI 日志、`cmd.exe`、PowerShell 都可能是这种编码；能在运行时切换的流
+    一律切到 UTF-8，切不了的（被重定向到不支持的对象）就保持原样。
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if callable(reconfigure):
+            try:
+                reconfigure(encoding="utf-8")
+            except (OSError, ValueError):
+                pass
+
+
 def main(argv: "list[str]") -> int:
+    _utf8_streams()
     current = compute()
     if "--write" in argv:
         write_baseline(current)
