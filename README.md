@@ -347,8 +347,8 @@ Hello. How are you?
 ## 项目结构
 
 ```
-qikou/
-├── qikou/                      # 核心包
+ChatSplit/
+├── qikou/                      # 核心包（随 wheel 分发）
 │   ├── __init__.py             # 对外导出
 │   ├── __main__.py             # python -m qikou 入口
 │   ├── cli.py                  # 命令行 / 菜单
@@ -362,11 +362,20 @@ qikou/
 │   ├── kaomojis.txt            # 颜文字语料（随 wheel 分发）
 │   └── py.typed                # PEP 561 类型标记
 ├── tests/
-│   ├── test.txt                # 测试用例
-│   └── results/                # 测试报告（自动生成）
+│   ├── test.txt                # 人工复核用例
+│   ├── test_qikou.py           # pytest 断言测试
+│   └── results/                # 测试报告（自动生成，不入库）
+├── docs/
+│   ├── README.md               # 文档索引
+│   ├── project-layout.md       # 目录约定与维护规则
+│   └── design/
+│       ├── v3.0-design.md      # v3.0 方案（现行）
+│       └── v3.0-design-draft-1.md   # v3.0 早期草案（已归档）
 ├── legacy/                     # 旧版存档
 │   ├── ChatSplit-v1.0.py
 │   └── ChatSplit-v2.0.py
+├── local/                      # 本机私有，不入库（见 local/README.md）
+├── dist/                       # 构建产物（不入库）
 ├── pyproject.toml              # 打包配置（PEP 621）
 ├── MANIFEST.in                 # sdist 内容清单
 ├── README.md                   # 中文文档
@@ -458,7 +467,7 @@ qikou/
 - 超长文本切点优化（如切在 `to` 还是 `and` 后）
 - 语气 vs 信息（如 `好吧。那就这样。` 一句还是两句）
 
-完整方案（含实测预研数据、数据与合规、特征清单、评估体系、分阶段落地、成本估算）见 [docs/v3-design.md](docs/v3-design.md)。
+完整方案（含实测预研数据、数据与合规、特征清单、评估体系、分阶段落地、成本估算）见 [docs/design/v3.0-design.md](docs/design/v3.0-design.md)。
 
 ### v4.0 呼吸（远期）
 

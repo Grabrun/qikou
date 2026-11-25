@@ -8,20 +8,15 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# 自动测试报告（由 python -m qikou --test 生成，每次带时间戳）
+# 自动测试报告（由 qikou test 生成，每次带时间戳）
 tests/results/
 
-# 颜文字来源数据：4 个上游导出文件（gboard / googlejp / msime / ios.plist，
-# 约 13.7 MB），未被任何代码引用，仅本地保留、不入库。
-# 实际加载的语料已移入包内：qikou/data/kaomojis.txt（随 wheel 分发）。
-Kaomoji/
+# 本机私有目录：上游颜文字导出存档、历史测试报告、交接文档快照、个人提示词。
+# 放这里的都是「有用但不属于仓库内容」的东西，说明见 local/README.md。
+# 其中字面加载的语料在包内：qikou/kaomojis.txt（随 wheel 分发）。
+local/
 
-# 个人使用、与项目无关的辅助文件：提示词及其本地版本库。
-# 两者都不进 GitHub —— .prompt/ 自带一个独立仓库，Prompt.txt 在其中。
-.prompt/
-Prompt.txt
-
-# 交接文档：只作本地参考，不进 GitHub。
+# 交接文档：只作本地参考，不进 GitHub（通常放在 local/handover/）
 HANDOVER.md
 
 # 打包 / 构建产物

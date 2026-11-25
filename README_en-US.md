@@ -355,8 +355,8 @@ Cases hold **inputs only** — there are no expected outputs. `--test` is theref
 ## Project Structure
 
 ```
-qikou/
-├── qikou/                      # core package
+ChatSplit/
+├── qikou/                      # core package (shipped in the wheel)
 │   ├── __init__.py             # public exports
 │   ├── __main__.py             # python -m qikou entry point
 │   ├── cli.py                  # CLI / menu / auto test
@@ -371,10 +371,19 @@ qikou/
 │   └── py.typed                # PEP 561 marker
 ├── tests/
 │   ├── test.txt                # test cases (inputs only)
+│   ├── test_qikou.py           # pytest assertions
 │   └── results/                # generated reports (not tracked)
+├── docs/
+│   ├── README.md               # documentation index (Chinese)
+│   ├── project-layout.md       # layout conventions and maintenance rules (Chinese)
+│   └── design/
+│       ├── v3.0-design.md      # current v3.0 plan (Chinese)
+│       └── v3.0-design-draft-1.md   # early v3.0 draft, archived (Chinese)
 ├── legacy/                     # archived single-file versions
 │   ├── ChatSplit-v1.0.py
 │   └── ChatSplit-v2.0.py
+├── local/                      # machine-local, never committed (see local/README.md)
+├── dist/                       # build artifacts (not tracked)
 ├── pyproject.toml              # packaging metadata (PEP 621)
 ├── MANIFEST.in                 # sdist contents
 ├── README.md                   # Chinese README
@@ -467,7 +476,7 @@ It addresses the ceiling of the rule approach:
 - long-text cut optimisation (e.g. after `to` rather than after `and`)
 - tone versus information (e.g. is `好吧。那就这样。` one message or two?)
 
-The full design — measured pre-research numbers, data and compliance, the feature list, the evaluation framework, the phased rollout and the cost estimate — is in [docs/v3-design.md](docs/v3-design.md) (Chinese).
+The full design — measured pre-research numbers, data and compliance, the feature list, the evaluation framework, the phased rollout and the cost estimate — is in [docs/design/v3.0-design.md](docs/design/v3.0-design.md) (Chinese).
 
 ### v4.0 Breathing (long term)
 
