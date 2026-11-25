@@ -40,7 +40,8 @@
 
 - `split(text, config=None, on_overflow=None)`：超长不可切消息的回调通知。
 - `tests/golden.py`：205 条用例输出的金标哈希，CI 用 `--check` 校验。
-- 21 条新增回归用例，覆盖 QK-01…QK-17；测试总数 49 → 65。
+- 21 个新增测试函数（18 条行为回归 + 2 条性能预算 + 1 条金标校验），
+  覆盖 QK-01…QK-17；收集数 49 → 65。
 - CI 增加 Windows 矩阵（3.9 / 3.13）。
 
 ### Changed

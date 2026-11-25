@@ -388,7 +388,7 @@ qikou 的核心能力是可信的：对抗输入不崩、不丢字，语料与�
 | QK-13 | `Config.__post_init__` 校验类型与取值范围；`max_messages <= 0` 文档化为"不限" | `test_config_validation` |
 | QK-14 | 删除 `is_before_list_item`、合并 `_prev_word*`，缩写判定统一走 `_is_abbrev` | 205 条输出不变 |
 | QK-15 | 半角双引号纳入未闭合保护；半角单引号明确不配对（撇号歧义） | `test_ascii_double_quote_is_protected` |
-| QK-16 | 新增 17 条审计回归用例 + 2 条性能预算，总用例 49 → 65 | `pytest` 65 passed |
+| QK-16 | 新增 21 个测试函数（18 条行为回归 + 2 条性能预算 + 1 条金标校验），收集数 49 → 65 | `pytest` 65 passed |
 | QK-17 | CI 增加 Windows 矩阵（3.9 / 3.13）与金标校验步骤 | `.github/workflows/ci.yml` |
 
 ### C.1 修复后的关键指标
