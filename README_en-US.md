@@ -391,10 +391,7 @@ ChatSplit/
 │   └── results/                # generated reports (not tracked)
 ├── docs/
 │   ├── README.md               # documentation index (Chinese)
-│   ├── project-layout.md       # layout conventions and maintenance rules (Chinese)
-│   ├── audit/                  # deep-audit report and figures (Chinese)
-│   └── design/
-│       └── v3.0-design.md      # current v3.0 plan (Chinese)
+│   └── project-layout.md       # layout conventions and maintenance rules (Chinese)
 ├── local/                      # machine-local, never committed (see local/README.md)
 ├── dist/                       # build artifacts (not tracked)
 ├── pyproject.toml              # packaging metadata (PEP 621)
@@ -514,7 +511,7 @@ It addresses the ceiling of the rule approach:
 - long-text cut optimisation (e.g. after `to` rather than after `and`)
 - tone versus information (e.g. is `好吧。那就这样。` one message or two?)
 
-The full design — measured pre-research numbers, data and compliance, the feature list, the evaluation framework, the phased rollout and the cost estimate — is in [docs/design/v3.0-design.md](docs/design/v3.0-design.md) (Chinese).
+The full design — measured pre-research numbers, data and compliance, the feature list, the evaluation framework, the phased rollout and the cost estimate — is an internal document and is not shipped with the repository.
 
 ### v4.0 Breathing (long term)
 

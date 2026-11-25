@@ -18,13 +18,10 @@ ChatSplit/
 │   └── results/                # qikou test 输出（自动生成，不入库）
 ├── docs/
 │   ├── README.md               # 文档索引
-│   ├── project-layout.md       # 本文件
-│   ├── audit/                  # 审计报告与配图
-│   └── design/
-│       └── v3.0-design.md      # v3.0 方案（现行）
+│   └── project-layout.md       # 本文件
 ├── local/                      # 本机私有，整体不入库
 │   ├── README.md
-│   ├── archive/                # 旧版单文件脚本、v3.0 早期草案
+│   ├── archive/                # 旧版脚本、v3.0 方案与草案、审计报告
 │   ├── kaomoji-sources/        # 4 个上游导出（≈14.4 MB）
 │   ├── test-reports/           # 历史测试报告（≈1.7 MB）
 │   ├── handover/               # 交接文档快照
@@ -41,7 +38,7 @@ ChatSplit/
 | `qikou/` | 源码与语料，唯一参与打包的目录 | 是 | 否 |
 | `tests/` | 断言测试与人工复核用例 | 是（`results/` 除外） | 否 |
 | `tests/results/` | `qikou test` 的当次输出，带时间戳 | 否 | 是 |
-| `docs/` | 设计文档、审计报告、目录约定 | 是 | 否 |
+| `docs/` | 文档索引与目录约定（不含设计方案、审计报告） | 是 | 否 |
 | `local/` | 本机私有资产（数据存档、历史报告、旧版脚本、个人资料） | 否 | `test-reports/` 可删 |
 | `local/archive/` | 已被取代或跑不起来的旧物：v1.0/v2.0 单文件、v3.0 早期草案 | 否 | 确认后删 |
 | `dist/` | 构建产物 | 否 | 是 |
@@ -65,7 +62,8 @@ ChatSplit/
 2. **清缓存不用犹豫**：`.pytest_cache/`、`.mypy_cache/`、`__pycache__/`、`*.egg-info/` 全是可再生的。
 3. **测试报告定期清**：报告正文是确定性的，堆多了直接删，或挪进 `local/test-reports/`
    留个对照。不会因此丢信息。
-4. **新增文档**：设计类放 `docs/design/`，命名按第 3 节，并同步 `docs/README.md` 索引。
+4. **新增文档**：仓库 `docs/` 只放索引与目录约定；设计方案、审计报告、需求草稿
+   一律进 `local/archive/docs/`，不入库——它们面向维护者，且随版本快速过时。
 5. **交接文档**（`HANDOVER.md` 一类）只放 `local/handover/`，只在交接时读；
    它的目录树与版本号会过时，**不作为现状依据**，也不拿来判定缺陷。
 6. **发布**：`python -m build` 出 `dist/`，`twine check dist/*` 过校验，
@@ -117,17 +115,19 @@ python -m venv .venv
 
 ### 2026-11-25 仓库精简（2.2.2 发布后）
 
-原则：仓库只留「能构建、能测试、能分发、能解释设计」的内容；历史与草稿进
-`local/archive/`，本机保留但不入库。跟踪文件 37 → 33。
+原则：仓库只留「能构建、能测试、能分发」的内容；历史、草案、审计与设计文档进
+`local/archive/`，本机保留但不入库。跟踪文件 37 → 29。
 
 | 动作 | 对象 | 处置 |
 |---|---|---|
 | 移出 | `legacy/`（v1.0 / v2.0 单文件，共 3 个文件） | → `local/archive/legacy-v1-v2/`，`git rm --cached` |
-| 移出 | `docs/design/v3.0-design-draft-1.md`（已被合并稿取代） | → `local/archive/v3.0-design-draft-1.md` |
-| 保留 | `docs/audit/`（审计报告 + 2 张配图） | 作为 2.2.2 行为变更的依据，Release 说明引用 |
+| 移出 | `docs/design/v3.0-design-draft-1.md`（已被合并稿取代） | → `local/archive/docs/design/` |
+| 移出 | `docs/design/v3.0-design.md`（v3.0 方案） | → `local/archive/docs/design/` |
+| 移出 | `docs/audit/`（报告 + 2 张配图） | → `local/archive/docs/audit/` |
 | 保留 | `qikou/kaomojis.txt`（1.28 MB） | 运行时语料，随 wheel 分发 |
-| 同步 | 中英文 README 目录树、`docs/README.md` 索引、本文件表格与命令 | — |
+| 同步 | 中英文 README 目录树与链接、`docs/README.md` 索引、本文件表格与命令 | — |
 | 修正 | 第 5 节命令：`.venv-build` → `.venv`，`49 passed` → `65 passed` | 与 2.2.2 现状一致 |
 
 判断依据：旧版脚本按已失效的 `Kaomoji/kaomojis.txt` 路径读音，本身跑不起来；
-v3.0 草案的全部有效内容已并入 `v3.0-design.md`；两者都能从 git 历史取回。
+v3.0 草案的内容已并入 v3.0 方案；设计与审计文档面向维护者而非使用者，且会随
+版本过时，因此一律不进 GitHub。这些都留在本机，也能从 git 历史取回。

@@ -1,10 +1,12 @@
 # docs —— 文档索引
 
+仓库内 `docs/` 只保留**工程约定**，不存放审计报告、设计方案、需求草稿这类长文档。
+原因：它们面向维护者本人而非使用者，且会随版本迅速过时；需要留档的放本机
+`local/archive/docs/`（`.gitignore` 整体忽略，不进 GitHub）。
+
 | 文档 | 内容 | 状态 |
 |---|---|---|
 | [project-layout.md](project-layout.md) | 目录职责、入库规则、命名与维护约定 | 现行 |
-| [design/v3.0-design.md](design/v3.0-design.md) | v3.0「韵律」方案：宽召回候选 + 模型打分 + 概率校准 + DP 打包 | 设计完成，待评审 |
-| [audit/2026-11-25-qikou-deep-audit.md](audit/2026-11-25-qikou-deep-audit.md) | qikou 2.2.1 深度审计：17 项分级风险、六视角评审、过度开发专项、修复路线（含附录 C 修复记录） | 现行（2026-11-25） |
 
 面向使用的入门文档、API 说明在仓库根目录：
 
@@ -14,5 +16,5 @@
 - [CONTRIBUTING.md](../CONTRIBUTING.md) 开发约定
 - [SECURITY.md](../SECURITY.md) 安全问题上报
 
-新增文档时：放进对应的子目录（设计类进 `design/`），命名遵循
-[project-layout.md](project-layout.md) 的版本前缀约定，并在本表补一行。
+新增文档时先问一句：**这是给使用者/贡献者的，还是维护者自己的？** 前者才进
+`docs/`，命名遵循 [project-layout.md](project-layout.md) 的约定，并在本表补一行。

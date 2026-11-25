@@ -383,10 +383,7 @@ ChatSplit/
 │   └── results/                # 测试报告（自动生成，不入库）
 ├── docs/
 │   ├── README.md               # 文档索引
-│   ├── project-layout.md       # 目录约定与维护规则
-│   ├── audit/                  # 深度审计报告与配图
-│   └── design/
-│       └── v3.0-design.md      # v3.0 方案（现行）
+│   └── project-layout.md       # 目录约定与维护规则
 ├── local/                      # 本机私有，不入库（见 local/README.md）
 ├── dist/                       # 构建产物（不入库）
 ├── pyproject.toml              # 打包配置（PEP 621）
@@ -506,7 +503,7 @@ ChatSplit/
 - 超长文本切点优化（如切在 `to` 还是 `and` 后）
 - 语气 vs 信息（如 `好吧。那就这样。` 一句还是两句）
 
-完整方案（含实测预研数据、数据与合规、特征清单、评估体系、分阶段落地、成本估算）见 [docs/design/v3.0-design.md](docs/design/v3.0-design.md)。
+完整方案（含实测预研数据、数据与合规、特征清单、评估体系、分阶段落地、成本估算）为内部设计文档，不随仓库发布。
 
 ### v4.0 呼吸（远期）
 
