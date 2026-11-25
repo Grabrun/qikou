@@ -28,7 +28,8 @@ from qikou.cli import main
 # ============================================================
 
 def test_version():
-    assert qikou.__version__ == "2.2.1"
+    # 发布流程：改版本号时同步 pyproject 的动态版本、CHANGELOG 与本用例
+    assert qikou.__version__ == "2.2.2"
 
 
 def test_public_api_surface():
@@ -385,3 +386,158 @@ def test_no_character_loss_on_adversarial_input():
         illegal = {c: v for c, v in added.items()
                    if c not in markers and not c.isspace()}
         assert not illegal, "凭空多出 %r" % (illegal,)
+
+
+# ============================================================
+# 2026-11 深度审计（QK-01…QK-17）的回归用例
+#
+# 每一条对应审计报告里的一个编号；改动相关代码时先看这里。
+# ============================================================
+
+def _long_body(times=44):
+    """约 480 字的单段落中文回复。"""
+    return ("这是第%d句，内容还行，再补一点字数。" % 1) * times
+
+
+def test_explicit_max_chars_is_respected():
+    """QK-01：显式 max_chars 不得被长度分层悄悄放大。"""
+    text = _long_body()
+    assert len(text) > 400
+    for mc in (30, 45, 60):
+        ms = split(text, config=Config(max_chars=mc))
+        longest = max(len(m) for m in ms)
+        assert longest <= mc + 6, (mc, longest)
+
+
+def test_default_config_still_scales_for_long_text():
+    """QK-01 的修复不能把"默认值自动放宽"一起弄丢。"""
+    text = _long_body()
+    ms = split(text)
+    assert max(len(m) for m in ms) > 60
+
+
+def test_scaled_for_length_only_enlarges_defaults():
+    cfg = Config(max_messages=3)
+    scaled = cfg.scaled_for_length(2000)
+    assert scaled.max_chars == 160      # 默认值，照常放大
+    assert scaled.max_messages == 3     # 显式值，不被放大
+    assert Config(max_chars=30).scaled_for_length(2000).max_chars == 30
+
+
+def test_cli_max_chars_applies_to_long_text(tmp_path, capsys):
+    f = tmp_path / "long.txt"
+    f.write_text(_long_body(), encoding="utf-8")
+    assert main(["split", "-c", "30", str(f)]) == 0
+    lines = [ln for ln in capsys.readouterr().out.splitlines() if ln]
+    assert lines
+    assert max(len(ln) for ln in lines) <= 36
+
+
+def test_list_marker_stays_with_content():
+    """QK-05：列表标记不能单独成条。"""
+    for text, prefix in (("- " + "很长" * 80, "- "),
+                         ("1. " + "步骤说明" * 60, "1. ")):
+        ms = split(text, config=Config(max_chars=40))
+        assert ms[0].startswith(prefix)
+        assert len(ms[0]) > len(prefix) + 2
+
+
+def test_many_paragraphs_do_not_defeat_message_cap():
+    """QK-04：多段落文本的条数上限不再随段落数线性失效。"""
+    text = "\n\n".join("第%d段内容，写得不算长但也要占一些字数。" % i
+                       for i in range(50))
+    assert len(split(text)) <= 10
+
+
+def test_placeholder_sentinels_roundtrip():
+    """QK-06：输入自带的占位符形状 / 私有区字符不得被误替换。"""
+    from qikou.protect import protect_special, restore_special
+    samples = [
+        "```code``` 以及 \x000\x00 字面",
+        "https://a.com/x \x009\x00",
+        "\ue0007\ue001 与 \ue002",
+    ]
+    for text in samples:
+        assert restore_special(*protect_special(text)) == text
+        assert "".join(split(text)) == text
+
+
+def test_overflow_callback_reports_oversize():
+    """QK-09：无法再切的超长消息要有可见信号。"""
+    seen = []
+    text = "**" + "很长的一段话" * 200 + "**"
+    split(text, config=Config(max_chars=60),
+          on_overflow=lambda msg, cap: seen.append((msg, cap)))
+    assert seen
+    assert all(cap == 60 for _, cap in seen)
+    assert all(len(msg) > 60 for msg, _ in seen)
+
+
+def test_split_without_callback_stays_silent():
+    text = "**" + "很长的一段话" * 200 + "**"
+    assert len(split(text, config=Config(max_chars=60))) == 1
+
+
+def test_ascii_double_quote_is_protected():
+    """QK-15：半角双引号与全角引号同等保护；半角单引号不配对。"""
+    text = 'He said "one. two. three." Then left.'
+    assert split(text) == [text]
+    assert split("他说“第一句。第二句。”然后走了。") == ["他说“第一句。第二句。”然后走了。"]
+
+
+def test_whitespace_contract():
+    """QK-10：段内空白保留，消息边界的空白丢弃（已在文档写明）。"""
+    assert split("甲\t乙。") == ["甲\t乙。"]
+    assert split("第一句话写得足够长。\t第二句话也写得足够长。") == [
+        "第一句话写得足够长。", "第二句话也写得足够长。"]
+
+
+def test_config_validation():
+    """QK-13：非法配置给出明确错误，而不是产出无意义的结果。"""
+    with pytest.raises(ValueError):
+        Config(max_chars=0)
+    with pytest.raises(ValueError):
+        Config(max_chars=-5)
+    with pytest.raises(ValueError):
+        Config(merge_max_chars=0)
+    with pytest.raises(TypeError):
+        Config(max_chars="60")          # type: ignore[arg-type]
+    assert Config(max_messages=0).max_messages == 0
+
+
+def test_repo_root_resolution_is_explicit(monkeypatch, tmp_path):
+    """QK-12：源码仓库的判定用环境变量/真实用例文件，而不是猜目录。"""
+    from qikou import cli
+    monkeypatch.setenv("QIKOU_REPO", str(tmp_path))
+    assert cli._resolve_repo_root() == str(tmp_path)
+    monkeypatch.setenv("QIKOU_REPO", str(tmp_path / "missing"))
+    assert cli._resolve_repo_root() is None
+
+
+def test_performance_budget_for_long_text():
+    """QK-02：长文本不得再平方退化（阈值放宽到 CI 也能过）。"""
+    import time
+    text = ("这是第%d句，内容还行，再补一点字数让句子长一些。" % 1) * 700
+    split(text)                          # 预热，排除语料加载
+    t0 = time.perf_counter()
+    split(text)
+    assert time.perf_counter() - t0 < 1.2      # 约 20k 字
+
+
+def test_performance_budget_for_unclosed_fence():
+    """QK-03：未闭合围栏输入不得拖住进程。"""
+    import time
+    fence = "`" * 40000
+    split(fence)
+    t0 = time.perf_counter()
+    assert split(fence)
+    assert time.perf_counter() - t0 < 2.5
+
+
+def test_case_corpus_matches_golden():
+    """205 条用例的输出金标。预期改动请跑 `python tests/golden.py --write`。"""
+    import sys as _sys
+    _sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import golden
+    assert golden.compute() == golden.read_baseline(), (
+        "用例输出变了。确认差异符合预期后运行 python tests/golden.py --write 更新基线。")

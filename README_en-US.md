@@ -250,7 +250,18 @@ for message in split(text):
     print(message)
 ```
 
-`split()` returns `list[str]`. The kaomoji corpus is **loaded automatically** on first use (about 0.1 s); you normally never have to touch it.
+`split()` returns `list[str]`. The kaomoji corpus is **loaded automatically** on first use (about 0.25 s for 55213 entries); you normally never have to touch it.
+
+Whitespace contract: leading/trailing whitespace of the input is dropped; whitespace at a **message boundary** (tabs included) is not preserved; whitespace inside a message is kept as-is.
+
+A message that genuinely cannot be cut (an over-long bold run, a quoted run, a code block) is allowed to exceed `max_chars`. Pass a callback if you need to know:
+
+```python
+def report(message, cap):
+    log.warning("oversize %d chars (cap %d): %s…", len(message), cap, message[:20])
+
+messages = split(text, on_overflow=report)
+```
 
 ### Custom configuration
 
@@ -295,24 +306,27 @@ Every parameter of the `Config` class:
 
 | Parameter | Default | Meaning |
 |---|---|---|
-| `max_chars` | 60 | Hard cap per message. Exceeding it triggers a split |
+| `max_chars` | 60 | Hard cap per message. Exceeding it triggers a split. **An explicit value is never scaled up** |
 | `target_chars` | 20 | Ideal length. The preferred region for a cut |
 | `min_chars` | 4 | Below this, try to merge with a neighbour |
-| `max_messages` | 6 | Soft cap on the message count. Over it, the shortest adjacent pair is merged |
+| `max_messages` | 6 | Soft cap on the message count. Over it, adjacent pairs are merged; `<= 0` means unlimited |
 | `atomic_merge_prefix` | 20 | Threshold for merging a short prefix with a long atomic fragment |
-| `merge_max_chars` | 60 | Cap after a merge (scaled up to that tier's `max_chars`) |
+| `merge_max_chars` | 60 | Cap after a merge (never above `max_chars`) |
+| `auto_scale` | `True` | Whether the **defaults** grow with the total length. Set `False` to pin the config |
 
-**`max_messages` is a soft cap, and it competes with the per-message cap**: over the limit the shortest adjacent pair is merged, and a merged message stays within `merge_max_chars`. Once the total exceeds `max_messages × merge_max_chars` the two constraints **cannot both hold**; the implementation keeps the length limit and the real count lands around `⌈total / merge_max_chars⌉`. Measured (the >800-character tier: 10 messages, 160 characters each):
+`Config` validates its arguments: a wrong type raises `TypeError`, an impossible value such as `max_chars <= 0` raises `ValueError`.
+
+**`max_messages` is a soft cap, and it competes with the per-message cap**: over the limit, the shortest adjacent pair inside the same paragraph is merged first; if that cannot reach the cap, paragraphs are merged too (joined with a blank line). A merged message stays within `min(merge_max_chars, max_chars)`. The count therefore has a hard floor `⌈visible chars / merge cap⌉`; a cap below that floor cannot be met. Measured (the >800-character tier: 10 messages, merge cap 160):
 
 | Total | Actual messages | Note |
 |---|---|---|
-| 840 chars | 10 | meets the cap |
-| 1680 chars | 20 | above 1600 characters it must overflow |
-| 3360 chars | 40 | same |
+| 793 chars (36 paragraphs) | 7 | meets the cap (8 for this tier) |
+| 1598 chars (66 paragraphs) | 10 | meets the cap |
+| 3248 chars (135 paragraphs) | 21 | equals the floor ⌈3248/160⌉; cannot go lower |
 
 On top of that, list items, headings, tables, horizontal rules, standalone code blocks / URLs, and entries ending in a tilde never take part in a merge, so a reply full of structure can end up higher still.
 
-**Adaptive length**: `split()` relaxes the per-message cap and the message-count cap according to the total length:
+**Adaptive length**: `split()` relaxes the fields that are **still at their default** (explicitly set fields are kept as given):
 
 | Total length | max_chars | target_chars | max_messages | merge_max_chars |
 |---|---|---|---|---|
@@ -419,12 +433,37 @@ Every decision in the splitter is a tradeoff between **semantic completeness** a
 | A single message slightly over `max_chars` | allowed | semantics first; better long than shattered |
 | Very long text cut after a preposition | unsolved | the ceiling of the rule approach; v3.0 addresses it |
 | Kaomoji next to a tilde | each becomes its own message | `~` is a soft sentence end and stands semantically alone |
+| Uncuttable over-long run (bold / quoted / code) | kept whole, may far exceed `max_chars` | cutting it would break Markdown and quoting; use `on_overflow` to observe |
+| Multi-paragraph long text | paragraphs are merged (blank line) when the cap is otherwise unreachable | otherwise every paragraph is a message and the count grows with paragraph count |
+| Half-width single quote | not paired-protected | it doubles as the English apostrophe; opener vs possessive is undecidable |
 
 ---
 
 ## Version History
 
-### v2.1 (current)
+### v2.2.2 (current)
+
+Fixes from the 2026-11 deep audit. Behaviour is unchanged on the 205-case corpus (byte-identical output); what changed is the contract and the scaling.
+
+- an explicit `max_chars` is no longer scaled up: `Config(max_chars=30)` means 30, and `qikou split -c 30` now applies to long texts
+- long-text cost is linear instead of quadratic: 118.9k chars 135.9 s → 187 ms, unclosed fence 80k chars 8.2 s → 201 ms
+- list markers stay attached to their content (no more bubbles containing only `-`)
+- the message cap works on multi-paragraph text (paragraphs are merged when the cap is otherwise unreachable)
+- placeholders moved to the private-use area and are escaped, so input containing NUL or placeholder-shaped runs round-trips losslessly
+- `Config` validates its arguments; `max_messages <= 0` explicitly means unlimited
+- `split()` gained an `on_overflow` callback for messages that cannot be cut
+- `qikou test` locates the repo via `QIKOU_REPO` or a real case file; `QIKOU_REPORT_DIR` picks the report directory
+- CI adds a Windows matrix and a 205-case golden check (`tests/golden.py --check`)
+
+### v2.2.1
+
+- `requires-python` raised to `>=3.9` (required by the `setuptools>=77` build backend); the runtime still works on 3.8
+
+### v2.2.0
+
+- first public release: standard packaging, `py.typed`, a console entry point, a test suite and GitHub Actions
+
+### v2.1
 
 - packaging standardised: `pyproject.toml` (PEP 621), `py.typed` (PEP 561), a `qikou` console entry point
 - API standardised: `split(text, config=None) -> list[str]`, `Config` is a dataclass

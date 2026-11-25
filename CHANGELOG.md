@@ -4,6 +4,52 @@
 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [2.2.2] — 2026-11-25
+
+2026-11 深度审计（17 项发现）的修复版本。205 条用例输出与 2.2.1 逐字节
+相同；改动集中在对外契约与规模表现。
+
+### Fixed
+
+- 显式 `max_chars` 被长度分层静默放大：`Config(max_chars=30)` 在 484 字
+  文本上实际按 120 切，CLI `-c 30` 同样失效。现在分层只放大仍处于默认
+  值的字段，显式值原样保留（`auto_scale=False` 可完全固定）。
+- 长文本耗时平方增长：分句判定与切点打分每个候选都重扫一遍前缀。
+  改为每段预计算一次前缀状态（可见长度、括号深度、标记位置），
+  118.9k 字 135.9 s → 187 ms，37.3k 字 20.2 s → 66 ms。
+- 超长文本的切分循环固定 200 次上限，超出后把剩余整段并成一条。
+  上限改为按可见长度估算。
+- 列表项标记与内容被切开（出现只有 `-` 或 `1.` 的气泡）。切分时先从
+  标记后取内容，再把标记粘回第一段。
+- 多段落文本的条数上限失效（50 段 5226 字产 50 条）。段内压不到上限时
+  改为按顺序跨段落装箱（空行连接），并写明物理下限
+  `⌈可见字数 / 合并上限⌉`。
+- 合并后单条上限可能超过 `max_chars`（`-c 30` 仍产出 60 字消息），
+  现在取 `min(merge_max_chars, max_chars)`。
+- 占位符与输入字符空间重叠：输入自带 `\x00N\x00` 时内容被复制、字面片段
+  消失。占位符改用私有使用区（`U+E000`/`U+E001`），冲突字符用 `U+E002`
+  转义，往返无损。
+- 半角双引号不参与未闭合保护：`"a. b."` 会被切开。现在与全角引号同等
+  处理；半角单引号因与英文撇号无法区分，明确不配对。
+- `Config` 构造不校验：`max_chars=0` 产出 6 条 3 字消息。现在类型错误抛
+  `TypeError`、越界抛 `ValueError`；`max_messages <= 0` 明确表示不限。
+- `cli._REPO` 靠"兄弟目录有 tests"猜测运行环境。改为 `QIKOU_REPO` 环境
+  变量或真实存在的 `tests/test.txt`；报告目录可用 `QIKOU_REPORT_DIR`。
+
+### Added
+
+- `split(text, config=None, on_overflow=None)`：超长不可切消息的回调通知。
+- `tests/golden.py`：205 条用例输出的金标哈希，CI 用 `--check` 校验。
+- 17 条审计回归用例（QK-01…QK-17）。
+- CI 增加 Windows 矩阵（3.9 / 3.13）。
+
+### Changed
+
+- 内部打包结构由 `List[Any]` 改为 `_Msg` dataclass；合并改为优先队列，
+  避免 O(m²) 的空转。
+- 文档补齐：`Config` 参数表、`max_messages` 物理下限、空白约定、
+  设计权衡新增三行、版本历史补 2.2.0 / 2.2.1 / 2.2.2。
+
 ## [2.2.1] — 2026-10-08
 
 ### Fixed
@@ -80,6 +126,7 @@
   系统上会导致语料静默加载 0 条。现在语料位于 `qikou/kaomojis.txt`，
   且加载失败会明确报错。
 
+[2.2.2]: https://github.com/Grabrun/qikou/releases/tag/v2.2.2
 [2.2.1]: https://github.com/Grabrun/qikou/releases/tag/v2.2.1
 [2.2.0]: https://github.com/Grabrun/qikou/releases/tag/v2.2.0
 [2.1.0]: https://test.pypi.org/project/qikou/2.1.0/

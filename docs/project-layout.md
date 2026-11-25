@@ -17,6 +17,7 @@ ChatSplit/
 ├── docs/
 │   ├── README.md               # 文档索引
 │   ├── project-layout.md       # 本文件
+│   ├── audit/                  # 审计报告与配图
 │   └── design/
 │       ├── v3.0-design.md      # v3.0 方案（现行）
 │       └── v3.0-design-draft-1.md  # v3.0 早期草案（已归档）

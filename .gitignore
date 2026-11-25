@@ -25,6 +25,9 @@ dist/
 *.egg-info/
 .eggs/
 
+# 历史版本归档（每个版本一个目录，见 local/README.md 的版本约定）
+releases/
+
 # 虚拟环境（.venv、.venv-build、.venv-test 等）
 .venv*/
 venv/

@@ -15,8 +15,9 @@ pip install -e ".[dev]"         # 只有开发期依赖，运行时依旧是零�
 ## 跑测试
 
 ```bash
-pytest              # 断言测试，44 项
-mypy                # 类型检查（strict，配置在 pyproject.toml）
+pytest                          # 断言测试（数量以 pytest --collect-only -q 为准）
+mypy                            # 类型检查（strict，配置在 pyproject.toml）
+python tests/golden.py --check  # 205 条用例输出的金标哈希
 ```
 
 另外有一套**给人看的**用例语料：
@@ -28,6 +29,16 @@ qikou test 你的用例.txt         # 跑指定文件
 
 `tests/test.txt` 只有输入、没有预期输出，报告正文是确定性的，可以直接
 diff 两份报告来观察改动带来的差异。它适合人工复核，不是断言测试。
+
+改了切分逻辑、且差异确认符合预期时，更新金标：
+
+```bash
+python tests/golden.py --write
+```
+
+并把条数变化的清单贴进 PR 描述。CI 会跑 `--check`，没更新基线就会失败。
+`tests/test_qikou.py` 末尾还有两条性能预算用例（长文本、未闭合围栏），
+阈值刻意放宽到普通 CI 机器也能过；本地明显变慢时先看这两条。
 
 ## 硬性约束
 

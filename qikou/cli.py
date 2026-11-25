@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import os
 import re
@@ -33,9 +34,21 @@ _ROOT = os.path.dirname(_HERE)
 # 用例文件与报告目录属于源码仓库，不随 wheel 分发。装成包之后这两个变量
 # 为 None：test 仍可跑指定文件，但报告写到当前工作目录，绝不写进
 # site-packages。
-_REPO = _ROOT if os.path.isdir(os.path.join(_ROOT, 'tests')) else None
+#
+# 判定条件不再只看"兄弟目录里有 tests"（那会把恰好带 tests 目录的安装环境
+# 误判成源码仓库，见 2026-11 审计 QK-12）：必须真的找到 tests/test.txt；
+# 也可以用 QIKOU_REPO 显式指定仓库根、用 QIKOU_REPORT_DIR 指定报告目录。
+def _resolve_repo_root() -> Optional[str]:
+    env_root = os.environ.get("QIKOU_REPO")
+    if env_root:
+        return env_root if os.path.isdir(env_root) else None
+    return _ROOT if os.path.isfile(os.path.join(_ROOT, 'tests', 'test.txt')) else None
+
+
+_REPO = _resolve_repo_root()
 TEST_FILE = os.path.join(_REPO, 'tests', 'test.txt') if _REPO else None
-RESULT_DIR = os.path.join(_REPO, 'tests', 'results') if _REPO else None
+RESULT_DIR = os.environ.get("QIKOU_REPORT_DIR") or (
+    os.path.join(_REPO, 'tests', 'results') if _REPO else None)
 
 
 # ============================================================
@@ -250,13 +263,17 @@ def cmd_split(args: argparse.Namespace) -> int:
         print("%s: 读取失败：%s" % (PROG, exc), file=sys.stderr)
         return 1
 
-    config = Config()
+    overrides: dict[str, Any] = {}
     if args.max_chars is not None:
-        config.max_chars = args.max_chars
+        overrides["max_chars"] = args.max_chars
     if args.target_chars is not None:
-        config.target_chars = args.target_chars
+        overrides["target_chars"] = args.target_chars
     if args.max_messages is not None:
-        config.max_messages = args.max_messages
+        overrides["max_messages"] = args.max_messages
+    if overrides:
+        # 显式给了参数就不再按文本总长自动放大；构造时顺带做取值校验。
+        overrides["auto_scale"] = False
+    config = dataclasses.replace(Config(), **overrides)
 
     messages = split(text, config=config)
 

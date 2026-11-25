@@ -5,6 +5,8 @@
 # 用例语料与测试代码：主要面向源码仓库，但随 sdist 分发以便下游打包者跑测试。
 include tests/test.txt
 include tests/test_qikou.py
+include tests/golden.py
+include tests/baseline/cases.sha256
 
 # 变更记录
 include CHANGELOG.md
