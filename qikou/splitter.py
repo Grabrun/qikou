@@ -17,7 +17,9 @@ from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 from . import kaomoji
+from .candidates import candidate_positions, prune_candidates
 from .config import Config
+from .dp import DP_CHUNK_CHARS, dp_cut
 from .lexicon import (
     EN_ABBREV, ZH_TAIL_BAD, ZH_HEAD_BAD,
     EN_TAIL_BAD, EN_HEAD_BAD,
@@ -36,12 +38,35 @@ from .protect import (
 )
 from .postprocess import postprocess_message
 
-__all__ = ["split"]
+__all__ = ["split", "split_with_report", "SplitResult"]
 
 
 # 原子单元 —— (文本, 块号, 类型)；块号即空行分段编号。
 Unit = Tuple[str, int, str]
 Blocks = Sequence[str]
+
+
+@dataclass(frozen=True)
+class SplitResult:
+    """切分结果与可观测计数。
+
+    ``fallback_count`` 是进入结构兜底遍的 prose 单元数；
+    ``unsafe_cuts`` 是兜底时落在未闭合结构内的切点数；
+    ``over_max_chars`` 是最终仍超过 ``max_chars`` 的消息数；
+    ``over_max_messages`` 是超过 ``max_messages`` 的消息条数。
+    """
+
+    messages: List[str]
+    fallback_count: int
+    unsafe_cuts: int
+    over_max_chars: int
+    over_max_messages: int
+
+
+@dataclass
+class _RunStats:
+    fallback_count: int = 0
+    unsafe_cuts: int = 0
 
 
 @dataclass
@@ -342,7 +367,7 @@ def split_sentences(line: str, blocks: Blocks) -> List[str]:
     return parts
 
 
-def build_units(text: str, blocks: Blocks) -> List[Unit]:
+def build_units(text: str, blocks: Blocks, use_dp: bool = False) -> List[Unit]:
     units = []
     blocks_split = re.split(r'\n\s*\n', text)
     bid = 0
@@ -371,6 +396,11 @@ def build_units(text: str, blocks: Blocks) -> List[Unit]:
                 i = j
             elif LIST_RE.match(line):
                 units.append((line, bid, 'list'))
+                i += 1
+            elif use_dp:
+                # v3.0：prose 行整行作为一个 unit，让 split_long 有足够
+                # 空间做段级 DP；不再在这里预切成句子。
+                units.append((line, bid, 'text'))
                 i += 1
             else:
                 for s in split_sentences(line, blocks):
@@ -517,7 +547,89 @@ def find_cut(state: _State, start: int, cfg: Config) -> int:
     return best_pos
 
 
-def split_long(text: str, cfg: Config, blocks: Blocks) -> List[str]:
+def _chunk_ranges(text: str, state: "_State", cands: Sequence[int]) -> List[Tuple[int, int]]:
+    """把超过单次 DP 上限的文本切成若干块，优先落在安全候选上。"""
+    n = state.n
+    ranges: List[Tuple[int, int]] = []
+    start = 0
+    while state.vis[n] - state.vis[start] > DP_CHUNK_CHARS:
+        limit_vis = state.vis[start] + DP_CHUNK_CHARS
+        win = [p for p in cands
+               if state.vis[start] < state.vis[p] <= limit_vis
+               and not state.md_span(p) and not state.unclosed_bracket(p)]
+        cut = max(win) if win else -1
+
+        if cut <= start:
+            hard = state.hard_index(start, DP_CHUNK_CHARS)
+            if hard <= start:
+                hard = min(start + 1, n)
+            cut = hard
+            for sep in ('\n\n', '\n', '。', '！', '？', '；', '，', ' '):
+                pos = text.rfind(sep, start + 1, hard)
+                if pos >= start + 1:
+                    cut = pos + len(sep)
+                    break
+        if cut <= start:
+            cut = min(start + 1, n)
+        ranges.append((start, cut))
+        start = cut
+    ranges.append((start, n))
+    return ranges
+
+
+def _split_long_dp(text: str, cfg: Config, blocks: Blocks,
+                   stats: Optional[_RunStats]) -> List[str]:
+    """v3.0 段级 DP 路径；只在调用方确认可见长度超过 max_chars 时进入。"""
+    state = _State(text, blocks)
+    n = state.n
+    total = state.vis[n]
+    cands = candidate_positions(text, blocks, cfg.max_chars)
+    cands = prune_candidates(text, blocks, cands, total, cfg.max_chars,
+                             cfg.candidate_cap_per_100)
+
+    if not cands or n == 0:
+        if stats is not None:
+            stats.fallback_count += 1
+        whole = text.strip()
+        return [whole] if whole else []
+
+    if total > DP_CHUNK_CHARS:
+        ranges = _chunk_ranges(text, state, cands)
+        if len(ranges) > 1:
+            parts: List[str] = []
+            for start, end in ranges:
+                chunk = text[start:end].strip()
+                if chunk:
+                    parts.extend(split_long(chunk, cfg, blocks, stats))
+            return parts
+
+    result = dp_cut(text, state, cfg, cands)
+    if stats is not None:
+        if result.fallback:
+            stats.fallback_count += 1
+        stats.unsafe_cuts += result.unsafe_cuts
+
+    parts = []
+    start = 0
+    while start < n and text[start].isspace():
+        start += 1
+    for cut in result.cuts:
+        if cut <= start or cut >= n:
+            continue
+        part = text[start:cut].strip()
+        if part:
+            parts.append(part)
+        start = cut
+        while start < n and text[start].isspace():
+            start += 1
+    rest = text[start:].strip()
+    if rest:
+        parts.append(rest)
+    return parts if parts else ([text.strip()] if text.strip() else [])
+
+
+def split_long(text: str, cfg: Config, blocks: Blocks,
+               stats: Optional[_RunStats] = None) -> List[str]:
     if visible_len(text, blocks) <= cfg.max_chars:
         return [text]
 
@@ -526,8 +638,11 @@ def split_long(text: str, cfg: Config, blocks: Blocks) -> List[str]:
     marker = LIST_RE.match(text)
     if marker is not None and marker.end() < len(text):
         head = text[:marker.end()]
-        tail_parts = split_long(text[marker.end():], cfg, blocks)
+        tail_parts = split_long(text[marker.end():], cfg, blocks, stats)
         return [head + tail_parts[0]] + tail_parts[1:]
+
+    if cfg.use_dp:
+        return _split_long_dp(text, cfg, blocks, stats)
 
     state = _State(text, blocks)
     n = state.n
@@ -580,22 +695,25 @@ def ends_with_tilde(text: str) -> bool:
 
 
 def pack_units(units: List[Unit], cfg: Config,
-               blocks: Blocks) -> List[_Msg]:
+               blocks: Blocks,
+               stats: Optional[_RunStats] = None) -> List[_Msg]:
     msgs: List[_Msg] = []
     for text, bid, kind in units:
         if kind in ('table', 'heading', 'hr'):
             msgs.append(_Msg(text, bid))
             continue
 
-        for part in split_long(text, cfg, blocks):
+        for part in split_long(text, cfg, blocks, stats):
             if msgs:
                 prev = msgs[-1]
                 plen = visible_len(prev.text, blocks)
                 clen = visible_len(part, blocks)
 
                 if is_fragment(part):
-                    prev.text = join_text(prev.text, part)
-                    continue
+                    if (not cfg.use_dp
+                            or plen + clen <= cfg.max_chars):
+                        prev.text = join_text(prev.text, part)
+                        continue
 
                 if kind == 'list':
                     msgs.append(_Msg(part, bid))
@@ -621,6 +739,16 @@ def pack_units(units: List[Unit], cfg: Config,
                 if (prev.bid == bid
                         and plen < cfg.min_chars
                         and plen + clen <= cfg.max_chars):
+                    prev.text = join_text(prev.text, part)
+                    continue
+
+                if (cfg.use_dp
+                        and prev.bid == bid
+                        and clen < cfg.min_chars
+                        and plen + clen <= cfg.max_chars
+                        and not is_heading(prev.text)
+                        and not is_hr(prev.text)
+                        and not is_table_msg(prev.text)):
                     prev.text = join_text(prev.text, part)
                     continue
             msgs.append(_Msg(part, bid))
@@ -762,6 +890,54 @@ def enforce_max_messages(msgs: List[_Msg], cfg: Config,
 # 主入口
 # ============================================================
 
+def split_with_report(text: str, config: Optional[Config] = None,
+                      on_overflow: Optional[Callable[[str, int], None]] = None
+                      ) -> SplitResult:
+    """切分文本，并返回兜底/超长/超条数计数。
+
+    参数与 :func:`split` 相同。计数只描述本次调用，不含全局状态。
+    """
+    kaomoji.ensure_loaded()
+    cfg = Config() if config is None else config
+
+    text = text.strip()
+    if not text:
+        return SplitResult([], 0, 0, 0, 0)
+
+    protected, special_blocks = protect_special(text)
+    total = visible_len(protected, special_blocks)
+    cfg = cfg.scaled_for_length(total)
+
+    stats = _RunStats()
+    units = build_units(protected, special_blocks, cfg.use_dp)
+    msgs = pack_units(units, cfg, special_blocks, stats)
+    msgs = enforce_max_messages(msgs, cfg, special_blocks)
+
+    out = []
+    for m in msgs:
+        raw = restore_special(m.text, special_blocks)
+        fixed = postprocess_message(
+            raw, repair_structure=(cfg.use_dp and stats.fallback_count > 0))
+        # max_chars 是硬约束：DP 模式下若补全标记会把消息推过上限，
+        # 保留未修饰的原文（宁可少补一个引号，也不制造超长消息）。
+        if (cfg.use_dp and len(fixed) > cfg.max_chars
+                and len(raw) <= cfg.max_chars):
+            fixed = raw
+        out.append(fixed)
+
+    over_max_chars = sum(1 for m in out if len(m) > cfg.max_chars)
+    over_max_messages = (
+        max(0, len(out) - cfg.max_messages) if cfg.max_messages > 0 else 0)
+
+    if on_overflow is not None:
+        for msg_text in out:
+            if len(msg_text) > cfg.max_chars:
+                on_overflow(msg_text, cfg.max_chars)
+
+    return SplitResult(out, stats.fallback_count, stats.unsafe_cuts,
+                       over_max_chars, over_max_messages)
+
+
 def split(text: str, config: Optional[Config] = None,
           on_overflow: Optional[Callable[[str, int], None]] = None) -> List[str]:
     """把一段文本切成若干条短消息。
@@ -784,26 +960,5 @@ def split(text: str, config: Optional[Config] = None,
         for message in split(reply):
             send(message)
     """
-    kaomoji.ensure_loaded()
-    cfg = Config() if config is None else config
-
-    text = text.strip()
-    if not text:
-        return []
-
-    protected, special_blocks = protect_special(text)
-    total = visible_len(protected, special_blocks)
-    cfg = cfg.scaled_for_length(total)
-
-    units = build_units(protected, special_blocks)
-    msgs = pack_units(units, cfg, special_blocks)
-    msgs = enforce_max_messages(msgs, cfg, special_blocks)
-
-    out = [postprocess_message(restore_special(m.text, special_blocks))
-           for m in msgs]
-
-    if on_overflow is not None:
-        for m in out:
-            if len(m) > cfg.max_chars:
-                on_overflow(m, cfg.max_chars)
-    return out
+    return split_with_report(text, config=config,
+                             on_overflow=on_overflow).messages

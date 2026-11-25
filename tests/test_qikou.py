@@ -29,11 +29,14 @@ from qikou.cli import main
 
 def test_version():
     # 发布流程：改版本号时同步 pyproject 的动态版本、CHANGELOG 与本用例
-    assert qikou.__version__ == "2.2.2"
+    assert qikou.__version__ == "3.0.0"
 
 
 def test_public_api_surface():
-    assert set(qikou.__all__) == {"Config", "kaomoji_count", "load_kaomojis", "split"}
+    assert set(qikou.__all__) == {
+        "Config", "SplitResult", "kaomoji_count", "load_kaomojis",
+        "split", "split_with_report",
+    }
 
 
 def test_split_returns_list_of_str():

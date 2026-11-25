@@ -264,14 +264,20 @@ def cmd_split(args: argparse.Namespace) -> int:
         return 1
 
     overrides: dict[str, Any] = {}
+    explicit_numeric = False
     if args.max_chars is not None:
         overrides["max_chars"] = args.max_chars
+        explicit_numeric = True
     if args.target_chars is not None:
         overrides["target_chars"] = args.target_chars
+        explicit_numeric = True
     if args.max_messages is not None:
         overrides["max_messages"] = args.max_messages
-    if overrides:
-        # 显式给了参数就不再按文本总长自动放大；构造时顺带做取值校验。
+        explicit_numeric = True
+    if args.dp:
+        overrides["use_dp"] = True
+    if explicit_numeric:
+        # 显式给了长度参数就不再按文本总长自动放大；构造时顺带做取值校验。
         overrides["auto_scale"] = False
     config = dataclasses.replace(Config(), **overrides)
 
@@ -436,6 +442,8 @@ def build_parser() -> argparse.ArgumentParser:
                          help="理想长度")
     p_split.add_argument("-m", "--max-messages", type=int, metavar="N",
                          help="条数上限（软）")
+    p_split.add_argument("--dp", action="store_true",
+                         help="启用 v3.0 段级 DP（默认关闭，输出会变化）")
     p_split.set_defaults(handler=cmd_split)
 
     p_test = sub.add_parser(

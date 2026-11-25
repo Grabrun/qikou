@@ -1,0 +1,3 @@
+# qikou 用例金标：python tests/golden.py --write --profile dp 生成
+# 覆盖 tests/test.txt 全部用例的切分结果（含用例名）
+58CF7D633961F3511D4F701AC3A172068EAC77B25E632DC6D0D1E497D067F38E

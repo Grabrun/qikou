@@ -4,6 +4,41 @@
 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [3.0.0] — 2026-11-26
+
+v3.0「韵律」的第一阶段：零数据、零模型的**段级 DP**。默认关闭
+（`use_dp=False`），默认路径与 2.2.2 逐字节相同（旧金标
+`D2678A2D…185392` 不变）；显式开启后输出会变化，DP 基线独立为
+`tests/baseline/cases-dp.sha256`（`58CF7D63…67F38E`）。
+
+### Added
+
+- `Config(use_dp=True)` / `qikou split --dp`：prose 行不再预切成句子，
+  `split_long` 在行/段内做全局最优 DP；标题、表格、列表标记仍是硬边界。
+- `qikou/candidates.py`：候选点生成、每 100 可见字符 12 个的密度上限，
+  以及「每个 `max_chars` 窗口至少一个」的覆盖骨架裁剪。
+- `qikou/dp.py`：`q(j) + L - λ` 目标、终点长度约束、严格/兜底两遍、
+  同分取更小前驱的确定性 tie-break；单次 DP 上限 2,000 字，超出按段分块。
+- `split_with_report()` / `SplitResult`：暴露兜底数、结构内切点数、
+  超长消息数与超条数消息数；`split()` 签名和 `list[str]` 返回值不变。
+- `Config.dp_cut_cost`（默认 1.20）、`Config.candidate_cap_per_100`（默认 12）。
+- `tests/test_candidates.py`、`tests/test_dp.py`、`tests/bench.py`；
+  CI 增加 DP 金标校验与 500 字性能冒烟。
+
+### Changed
+
+- 结构兜底时最多补全未闭合围栏/括号；若补全会把消息推过 `max_chars`，
+  保留原文，长度优先。
+- 性能（本机 Python 3.13）：500 字 DP P95 约 1.1–1.4 ms；2,000 字约
+  5–6 ms；10,000 字约 46 ms。
+- 测试收集数 65 → 85（新增 20 项）；CI 矩阵补 Python 3.14。
+
+### Notes
+
+- 3.0.0 是**段级 DP**，不跨段落；跨段落/整篇 DP 与模型增强留到 3.1.0。
+- 实测 205 条中 31 条在 DP 下改变，差异与 300 篇 λ 扫描见
+  `local/reports/v3-dp-eval.md`（本机私有，不随仓库发布）。
+
 ## [2.2.2] — 2026-11-25
 
 2026-11 深度审计（17 项发现）的修复版本。205 条用例输出与 2.2.1 逐字节

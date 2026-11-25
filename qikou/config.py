@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field, replace
 from typing import Any
 
@@ -16,6 +17,8 @@ DEFAULT_MIN_CHARS = 4
 DEFAULT_MAX_MESSAGES = 6
 DEFAULT_ATOMIC_MERGE_PREFIX = 20
 DEFAULT_MERGE_MAX_CHARS = 60
+DEFAULT_DP_CUT_COST = 1.20
+DEFAULT_CANDIDATE_CAP_PER_100 = 12
 
 _INT_FIELDS = (
     "max_chars",
@@ -24,6 +27,7 @@ _INT_FIELDS = (
     "max_messages",
     "atomic_merge_prefix",
     "merge_max_chars",
+    "candidate_cap_per_100",
 )
 
 # max_chars 的内部哨兵：构造后即被换成默认值，对外不可见（repr 里是 60）。
@@ -65,6 +69,12 @@ class Config:
     merge_max_chars: int = DEFAULT_MERGE_MAX_CHARS
     #: 是否允许按文本总长自动放大**默认**配置。
     auto_scale: bool = True
+    #: 是否启用 v3.0 段级 DP。默认关闭，保持 2.2.2 的贪心输出。
+    use_dp: bool = False
+    #: DP 每次切分的固定成本（归一化尺度），必须大于普通句末收益。
+    dp_cut_cost: float = DEFAULT_DP_CUT_COST
+    #: 候选密度上限：每 100 个可见字符保留多少个候选。
+    candidate_cap_per_100: int = DEFAULT_CANDIDATE_CAP_PER_100
     #: 是否显式给过 max_chars（内部记账，不参与比较与打印）。
     explicit_max_chars: bool = field(default=False, init=False,
                                      repr=False, compare=False)
@@ -95,6 +105,24 @@ class Config:
             raise ValueError(
                 "atomic_merge_prefix 不能为负，收到 %r"
                 % (self.atomic_merge_prefix,))
+        if self.candidate_cap_per_100 <= 0:
+            raise ValueError(
+                "candidate_cap_per_100 必须为正整数，收到 %r"
+                % (self.candidate_cap_per_100,))
+        if not isinstance(self.use_dp, bool):
+            raise TypeError(
+                "use_dp 必须是 bool，收到 %r（%s）"
+                % (self.use_dp, type(self.use_dp).__name__))
+        if (isinstance(self.dp_cut_cost, bool)
+                or not isinstance(self.dp_cut_cost, (int, float))):
+            raise TypeError(
+                "dp_cut_cost 必须是数字，收到 %r（%s）"
+                % (self.dp_cut_cost, type(self.dp_cut_cost).__name__))
+        if not math.isfinite(float(self.dp_cut_cost)):
+            raise ValueError("dp_cut_cost 必须是有限数")
+        if self.dp_cut_cost <= 0:
+            raise ValueError(
+                "dp_cut_cost 必须为正数，收到 %r" % (self.dp_cut_cost,))
 
     def scaled_for_length(self, total: int) -> "Config":
         """返回按文本总长放宽后的新配置，**不改动 self**。

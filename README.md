@@ -82,6 +82,7 @@ AI 生成的回复通常较长，直接发送到社交媒体上像"小作文"。
 
 - **自适应长度**：长文本自动放宽单条上限，避免碎成一地
 - **条数控制**：超过上限时合并最短相邻对，但跳过列表 / 标题 / 表格 / 波浪号结尾
+- **可选段级 DP（v3.0.0）**：`Config(use_dp=True)` 或 `qikou split --dp` 时，对超过 `max_chars` 的 prose 行/段做全局最优切分；默认关闭，输出与 2.2.2 一致
 
 ---
 
@@ -160,6 +161,7 @@ $ qikou split --json 回复.txt
 | `-c N`, `--max-chars N` | 单条硬上限，调小更碎 |
 | `-T N`, `--target-chars N` | 理想长度 |
 | `-m N`, `--max-messages N` | 条数上限（软） |
+| `--dp` | 启用 v3.0 段级 DP（默认关闭；输出会变化） |
 
 ### 交互菜单
 
@@ -259,6 +261,32 @@ def report(message, cap):
 messages = split(text, on_overflow=report)
 ```
 
+### v3.0 段级 DP（可选）
+
+`use_dp` 默认关闭。开启后，`build_units` 不再把 prose 行预切成句子，而是
+交给 DP 在整行/段内求全局最优；标题、表格、列表标记仍是硬边界。这个版本
+只做「段级」DP，不做跨段落的整篇 DP。
+
+```python
+from qikou import Config, split_with_report
+
+result = split_with_report(text, config=Config(use_dp=True))
+print(result.messages)
+print(result.fallback_count, result.over_max_chars, result.over_max_messages)
+```
+
+`SplitResult` 的计数：
+
+| 字段 | 含义 |
+|---|---|
+| `messages` | 切分后的消息列表 |
+| `fallback_count` | 进入结构兜底遍的 prose 单元数 |
+| `unsafe_cuts` | 兜底时落在未闭合 Markdown / 括号内的切点数 |
+| `over_max_chars` | 最终仍超过 `max_chars` 的消息数 |
+| `over_max_messages` | 超过 `max_messages` 的消息条数（软上限） |
+
+`split()` 的签名和返回值不变，仍返回 `list[str]`。
+
 ### 自定义配置
 
 ```python
@@ -309,6 +337,9 @@ print(kaomoji_count())             # 当前已加载的条数
 | `atomic_merge_prefix` | 20 | 短前缀 + 超长原子片段合并的阈值 |
 | `merge_max_chars` | 60 | 合并后单条上限（不超过 `max_chars`） |
 | `auto_scale` | `True` | 是否按总长自动放大**默认值**。置 `False` 可完全固定配置 |
+| `use_dp` | `False` | 启用 v3.0 段级 DP；默认关闭，保持 2.2.2 输出 |
+| `dp_cut_cost` | 1.20 | DP 每次切分的固定成本（归一化尺度） |
+| `candidate_cap_per_100` | 12 | 每 100 个可见字符最多保留的候选数 |
 
 构造 `Config` 时会校验取值：类型不对抛 `TypeError`，`max_chars <= 0` 等越界抛 `ValueError`。
 
@@ -367,6 +398,8 @@ ChatSplit/
 │   ├── __main__.py             # python -m qikou 入口
 │   ├── cli.py                  # 命令行 / 菜单
 │   ├── config.py               # 配置类
+│   ├── candidates.py           # v3.0 候选切点与覆盖骨架裁剪
+│   ├── dp.py                   # v3.0 段级 DP 求解器
 │   ├── patterns.py             # 正则与结构判定
 │   ├── lexicon.py              # 词表与标点分
 │   ├── kaomoji.py              # 颜文字 Trie
@@ -378,8 +411,12 @@ ChatSplit/
 ├── tests/
 │   ├── test.txt                # 人工复核用例
 │   ├── test_qikou.py           # pytest 断言测试
+│   ├── test_candidates.py      # v3.0 候选点测试
+│   ├── test_dp.py              # v3.0 DP 与结构不变量测试
+│   ├── bench.py                # v3.0 DP 轻量性能基准
 │   ├── golden.py               # 金标哈希校验
-│   ├── baseline/cases.sha256   # 205 条用例输出的基线
+│   ├── baseline/cases.sha256   # 205 条用例输出的默认基线
+│   ├── baseline/cases-dp.sha256 # 205 条用例输出的 DP 基线
 │   └── results/                # 测试报告（自动生成，不入库）
 ├── docs/
 │   ├── README.md               # 文档索引
@@ -400,11 +437,12 @@ ChatSplit/
 | `patterns.py` | 所有正则、字符集、结构判定函数 |
 | `lexicon.py` | 缩写表、连词表、标点基础分 |
 | `config.py` | 配置参数、长度自适应 |
+| `candidates.py` | v3.0 候选切点生成、密度上限与覆盖骨架 |
+| `dp.py` | v3.0 段级 DP：边界分预计算、严格/兜底两遍、tie-break |
 | `kaomoji.py` | 颜文字 Trie 加载与匹配 |
 | `protect.py` | 代码块 / URL 占位符保护与还原 |
 | `postprocess.py` | 未闭合 Markdown 与引号的补全 |
-| `splitter.py` | 分句、打包、打分、切点查找、主入口 |
-| `cli.py` | 命令行解析、手动输入、自动测试 |
+| `splitter.py` | 分句、打包、打分、切点查找、主入口 || `cli.py` | 命令行解析、手动输入、自动测试 |
 
 ---
 
@@ -419,17 +457,32 @@ ChatSplit/
 | `etc.` 后接句 | 不切 | 缩写歧义无解，保守处理 |
 | 未闭合半角括号 | 不自动补 | 颜文字 / 公式误补风险大 |
 | 单条允许轻微超 `max_chars` | 语义优先 | 宁长不碎，聊天更自然 |
-| 超长文本切在介词后 | 无解 | 规则方案天花板，v3.0 模型解决 |
+| 超长文本切在介词后 | 无解 | 规则方案天花板，v3.0b 模型解决 |
 | 颜文字 + 波浪号 | 各自成条 | `~` 是软句末，语义独立 |
 | 超长不可切段（加粗段 / 引号段 / 代码块） | 整段保留，可远超 `max_chars` | 切开就破坏 Markdown 与引号结构；用 `on_overflow` 感知 |
 | 多段落长文本 | 段内压不到条数上限时跨段落合并（空行连接） | 否则每个段落至少一条，条数随段落数线性增长 |
+| v3.0 段级 DP | 只在单个 prose 行/段内求全局最优，不跨段落 | 表格、标题、列表、代码块必须保持原子；整篇 DP 留到 3.1 评估 |
 | 半角单引号 | 不参与配对保护 | 它同时是英文撇号，无法可靠区分开引号与所有格 |
 
 ---
 
 ## 版本历史
 
-### v2.2.2（当前）
+### v3.0.0（当前）
+
+v3.0「韵律」的第一阶段：零数据、零模型的段级 DP，默认关闭。默认路径与
+2.2.2 逐字节一致（旧金标 `D2678A2D…185392` 不变）；显式开启后输出会变化，
+DP 基线独立为 `tests/baseline/cases-dp.sha256`。
+
+- 新增 `Config(use_dp=True)` / `qikou split --dp`：prose 行不再预切句，DP 在行/段内求全局最优
+- 新增候选点生成与 12/100 字密度上限；裁剪保留「每个 `max_chars` 窗口至少一个」的覆盖骨架
+- 新增结构两遍法：严格遍禁用未闭合 Markdown/括号内切点；无解时兜底并标记
+- 新增 `split_with_report()` / `SplitResult`：兜底数、结构内切点数、超长/超条数可观测
+- 新增 `dp_cut_cost`、`candidate_cap_per_100` 配置；新增 `tests/test_candidates.py`、`tests/test_dp.py`、`tests/bench.py`
+- 性能（本机 Python 3.13）：500 字 DP P95 约 1.1–1.4 ms，2,000 字 5–6 ms，10,000 字约 46 ms
+- 明确口径：3.0.0 是**段级 DP**，不跨段落；跨段落/整篇 DP 与模型增强留到 3.1
+
+### v2.2.2
 
 2026-11 深度审计后的修复版本。核心行为与 2.2.1 一致（205 条用例输出逐字节相同），修的是契约与规模问题。
 
@@ -487,15 +540,19 @@ ChatSplit/
 
 ## 路线图
 
-### v3.0 韵律（规划中）
+### v3.0 韵律（进行中）
 
-**用模型自动分句**。候选点二分类 + LightGBM。
+**v3.0a（3.0.0，已交付）**：零数据、零模型的段级 DP，默认关闭。先把切分
+结构、长度护栏和性能做成可回退的基线。
 
-- 数据来源：LLM 合成 + 规则弱监督 + 真实日志（脱敏）+ 在线反馈
-- 特征：局部字符 + 位置长度 + 语义词表 + 结构状态 + 候选上下文 + 规则分数（约 55–65 维）
-- 模型：LightGBM。**训练用 LightGBM，推理用随包模型 + 纯 Python 评估器——运行时依旧零依赖**（已实测：纯 Python 推理与 LightGBM 输出逐样本一致）
-- 打包：动态规划全局最优，替代局部贪心
-- 硬件：**普通 4 核 CPU + 8GB 内存即可**，无需 GPU
+**v3.0b（3.1.0，门禁）**：候选点二分类 + 纯 Python 推理 + 门控融合。先做
+50 篇真实回复的人工 gold pilot；Kappa ≥0.8 才进入数据与模型阶段，否则停在
+3.0.0，不扩数据掩盖问题。
+
+- 数据来源：LLM 合成 + 规则弱监督 + 真实日志（脱敏）；三层去重
+- 特征：局部字符 + 位置长度 + 语义词表 + 结构状态 + 规则分数（首版 ≤25 维）
+- 模型：LightGBM 训练，随包扁平树 + 纯 Python 评估器推理，运行时零依赖
+- 硬件：普通 4 核 CPU + 8GB 内存即可，无需 GPU
 
 解决规则方案的天花板问题：
 
@@ -503,7 +560,7 @@ ChatSplit/
 - 超长文本切点优化（如切在 `to` 还是 `and` 后）
 - 语气 vs 信息（如 `好吧。那就这样。` 一句还是两句）
 
-完整方案（含实测预研数据、数据与合规、特征清单、评估体系、分阶段落地、成本估算）为内部设计文档，不随仓库发布。
+完整方案与预研数据为内部设计文档，不随仓库发布。
 
 ### v4.0 呼吸（远期）
 
@@ -523,7 +580,7 @@ ChatSplit/
 |---|---|---|
 | v1 | 吐字 | 硬规则 |
 | v2 | 气口 | 规则 + 打分 |
-| v3 | 韵律 | LightGBM |
+| v3 | 韵律 | DP + 段级模型 |
 | v4 | 呼吸 | Transformer |
 
 每个版本是一次"学会呼吸"的进阶。

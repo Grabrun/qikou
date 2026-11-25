@@ -82,6 +82,7 @@ Chopping by character count breaks Markdown, URLs, and code blocks, and reads li
 
 - **Adaptive length**: long text relaxes the per-message cap so it does not shatter into pieces
 - **Message-count control**: over the cap, the shortest adjacent pair is merged — but list items, headings, tables, and tilde endings are skipped
+- **Optional segment-level DP (v3.0.0)**: with `Config(use_dp=True)` or `qikou split --dp`, prose lines/blocks over `max_chars` are split by a global optimum. Off by default; output stays byte-identical to 2.2.2
 
 ---
 
@@ -160,6 +161,7 @@ $ qikou split --json reply.txt
 | `-c N`, `--max-chars N` | hard cap per message (smaller = choppier) |
 | `-T N`, `--target-chars N` | ideal length |
 | `-m N`, `--max-messages N` | soft cap on the message count |
+| `--dp` | enable v3.0 segment-level DP (off by default; output changes) |
 
 ### Interactive menu
 
@@ -263,6 +265,33 @@ def report(message, cap):
 messages = split(text, on_overflow=report)
 ```
 
+### v3.0 segment-level DP (optional)
+
+`use_dp` is off by default. When enabled, `build_units` stops pre-splitting prose
+lines into sentences and hands the whole line/block to DP; headings, tables,
+and list markers remain hard boundaries. This release is **segment-level only**;
+it does not run DP across paragraphs.
+
+```python
+from qikou import Config, split_with_report
+
+result = split_with_report(text, config=Config(use_dp=True))
+print(result.messages)
+print(result.fallback_count, result.over_max_chars, result.over_max_messages)
+```
+
+`SplitResult` fields:
+
+| Field | Meaning |
+|---|---|
+| `messages` | split messages |
+| `fallback_count` | prose units that entered the structural fallback pass |
+| `unsafe_cuts` | fallback cuts inside unclosed Markdown / brackets |
+| `over_max_chars` | messages still over `max_chars` |
+| `over_max_messages` | messages above the soft `max_messages` cap |
+
+`split()` keeps its old signature and still returns `list[str]`.
+
 ### Custom configuration
 
 ```python
@@ -313,6 +342,9 @@ Every parameter of the `Config` class:
 | `atomic_merge_prefix` | 20 | Threshold for merging a short prefix with a long atomic fragment |
 | `merge_max_chars` | 60 | Cap after a merge (never above `max_chars`) |
 | `auto_scale` | `True` | Whether the **defaults** grow with the total length. Set `False` to pin the config |
+| `use_dp` | `False` | Enable v3.0 segment-level DP; off keeps 2.2.2 output |
+| `dp_cut_cost` | 1.20 | Fixed cost per DP cut (normalised scale) |
+| `candidate_cap_per_100` | 12 | Max candidates per 100 visible characters |
 
 `Config` validates its arguments: a wrong type raises `TypeError`, an impossible value such as `max_chars <= 0` raises `ValueError`.
 
@@ -375,6 +407,8 @@ ChatSplit/
 │   ├── __main__.py             # python -m qikou entry point
 │   ├── cli.py                  # CLI / menu / auto test
 │   ├── config.py               # Config class
+│   ├── candidates.py           # v3.0 candidates and coverage-skeleton pruning
+│   ├── dp.py                   # v3.0 segment-level DP solver
 │   ├── patterns.py             # regexes and structural checks
 │   ├── lexicon.py              # abbreviation list, conjunction list, base scores
 │   ├── kaomoji.py              # kaomoji trie
@@ -386,8 +420,12 @@ ChatSplit/
 ├── tests/
 │   ├── test.txt                # test cases (inputs only)
 │   ├── test_qikou.py           # pytest assertions
+│   ├── test_candidates.py      # v3.0 candidate tests
+│   ├── test_dp.py              # v3.0 DP and invariant tests
+│   ├── bench.py                # v3.0 DP smoke benchmark
 │   ├── golden.py               # golden-hash check
-│   ├── baseline/cases.sha256   # baseline for 205 case outputs
+│   ├── baseline/cases.sha256   # default baseline for 205 case outputs
+│   ├── baseline/cases-dp.sha256 # DP baseline for 205 case outputs
 │   └── results/                # generated reports (not tracked)
 ├── docs/
 │   ├── README.md               # documentation index (Chinese)
@@ -408,6 +446,8 @@ ChatSplit/
 | `patterns.py` | all regexes, character sets, and structural predicates |
 | `lexicon.py` | abbreviation list, conjunction list, base punctuation scores |
 | `config.py` | configuration parameters, adaptive length |
+| `candidates.py` | v3.0 candidate generation, density cap, coverage skeleton |
+| `dp.py` | v3.0 DP: boundary scores, strict/fallback passes, tie-break |
 | `kaomoji.py` | loading and matching the kaomoji trie |
 | `protect.py` | protecting and restoring code block / URL placeholders |
 | `postprocess.py` | closing unclosed Markdown and quotes |
@@ -427,17 +467,33 @@ Every decision in the splitter is a tradeoff between **semantic completeness** a
 | A sentence after `etc.` | not split | abbreviation ambiguity has no clean answer; stay conservative |
 | Unclosed half-width bracket | not auto-closed | too risky inside kaomoji, formulas, and code |
 | A single message slightly over `max_chars` | allowed | semantics first; better long than shattered |
-| Very long text cut after a preposition | unsolved | the ceiling of the rule approach; v3.0 addresses it |
+| Very long text cut after a preposition | unsolved | the ceiling of the rule approach; v3.0b addresses it |
 | Kaomoji next to a tilde | each becomes its own message | `~` is a soft sentence end and stands semantically alone |
 | Uncuttable over-long run (bold / quoted / code) | kept whole, may far exceed `max_chars` | cutting it would break Markdown and quoting; use `on_overflow` to observe |
 | Multi-paragraph long text | paragraphs are merged (blank line) when the cap is otherwise unreachable | otherwise every paragraph is a message and the count grows with paragraph count |
+| v3.0 segment-level DP | global optimum only inside a prose line/block, not across paragraphs | tables, headings, lists, and code blocks must stay atomic; whole-document DP is deferred to 3.1 |
 | Half-width single quote | not paired-protected | it doubles as the English apostrophe; opener vs possessive is undecidable |
 
 ---
 
 ## Version History
 
-### v2.2.2 (current)
+### v3.0.0 (current)
+
+The first stage of "Prosody": zero-data, zero-model segment-level DP, off by
+default. The default path is byte-identical to 2.2.2 (old golden
+`D2678A2D…185392` unchanged); enabling it changes output and has its own
+baseline, `tests/baseline/cases-dp.sha256`.
+
+- `Config(use_dp=True)` / `qikou split --dp`: prose lines are no longer pre-split into sentences; DP finds the best cut inside each line/block
+- candidate generation with a 12-per-100-character density cap, plus a coverage skeleton that keeps at least one candidate per `max_chars` window
+- two-pass structural policy: the strict pass forbids cuts inside unclosed Markdown/brackets; the fallback pass allows them and marks the result
+- `split_with_report()` / `SplitResult` exposes fallback, unsafe-cut, oversize and over-count numbers
+- new `dp_cut_cost` and `candidate_cap_per_100` options; new tests and `tests/bench.py`
+- performance (local Python 3.13): 500-char DP P95 about 1.1–1.4 ms, 2,000 chars 5–6 ms, 10,000 chars about 46 ms
+- scope is explicit: 3.0.0 is **segment-level DP**; cross-paragraph/whole-document DP and the model belong to 3.1
+
+### v2.2.2
 
 Fixes from the 2026-11 deep audit. Behaviour is unchanged on the 205-case corpus (byte-identical output); what changed is the contract and the scaling.
 
@@ -495,15 +551,21 @@ Fixes from the 2026-11 deep audit. Behaviour is unchanged on the 205-case corpus
 
 ## Roadmap
 
-### v3.0 Prosody (planned)
+### v3.0 Prosody (in progress)
 
-**Model-based splitting**. Binary classification of candidate cut points, with LightGBM.
+**v3.0a (3.0.0, shipped)**: zero-data, zero-model segment-level DP, off by
+default. It first makes the structural/length guardrails and performance a
+reversible baseline.
 
-- data: LLM synthesis + rule-based weak supervision + real logs (anonymised) + online feedback
-- features: local characters + position and length + semantic lexicon + structural state + candidate context + rule scores (~55–65 features)
-- model: LightGBM. **Trained with LightGBM, executed by a bundled model plus a pure-Python evaluator — the runtime stays dependency-free** (measured: the pure-Python evaluator matches LightGBM's output exactly)
-- packing: dynamic programming for a globally optimal split, replacing local greedy packing
-- hardware: **an ordinary 4-core CPU and 8 GB of RAM is enough** — no GPU needed
+**v3.0b (3.1.0, gated)**: candidate binary classification + pure-Python
+inference + gated fusion. Start with a 50-document human gold pilot; only a
+Kappa ≥0.8 allows the data/model phase. If it fails, stop at 3.0.0 instead of
+expanding data to hide the problem.
+
+- data: LLM synthesis + rule weak supervision + real logs (anonymised), with three-level deduplication
+- features: local characters + position/length + semantic lexicon + structural state + rule score (first version ≤25 features)
+- model: trained with LightGBM, shipped as a flat tree plus a pure-Python evaluator; runtime stays dependency-free
+- hardware: an ordinary 4-core CPU and 8 GB RAM is enough — no GPU
 
 It addresses the ceiling of the rule approach:
 
@@ -511,7 +573,8 @@ It addresses the ceiling of the rule approach:
 - long-text cut optimisation (e.g. after `to` rather than after `and`)
 - tone versus information (e.g. is `好吧。那就这样。` one message or two?)
 
-The full design — measured pre-research numbers, data and compliance, the feature list, the evaluation framework, the phased rollout and the cost estimate — is an internal document and is not shipped with the repository.
+The full design and pre-research numbers are an internal document and are not
+shipped with the repository.
 
 ### v4.0 Breathing (long term)
 
@@ -531,7 +594,7 @@ Version names:
 |---|---|---|
 | v1 | 吐字 (Articulation) | hard rules |
 | v2 | 气口 (Cadence) | rules + scoring |
-| v3 | 韵律 (Prosody) | LightGBM |
+| v3 | 韵律 (Prosody) | DP + segment model |
 | v4 | 呼吸 (Breathing) | Transformer |
 
 Each version is another step towards learning how to breathe.

@@ -13,13 +13,15 @@
 
 from .config import Config
 from .kaomoji import kaomoji_count, load_kaomojis
-from .splitter import split
+from .splitter import SplitResult, split, split_with_report
 
-__version__ = "2.2.2"
+__version__ = "3.0.0"
 
 __all__ = [
     "Config",
+    "SplitResult",
     "kaomoji_count",
     "load_kaomojis",
     "split",
+    "split_with_report",
 ]

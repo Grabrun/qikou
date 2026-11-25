@@ -13,8 +13,12 @@ ChatSplit/
 ├── tests/
 │   ├── test.txt                # 205 条人工复核用例
 │   ├── test_qikou.py           # pytest 断言测试
-│   ├── golden.py               # 金标哈希校验
-│   ├── baseline/cases.sha256   # 用例输出基线
+│   ├── test_candidates.py      # v3.0 候选点测试
+│   ├── test_dp.py              # v3.0 DP 与结构不变量测试
+│   ├── bench.py                # v3.0 DP 性能基准
+│   ├── golden.py               # 金标哈希校验（default / dp 两档）
+│   ├── baseline/cases.sha256   # 默认输出基线
+│   ├── baseline/cases-dp.sha256 # DP 输出基线
 │   └── results/                # qikou test 输出（自动生成，不入库）
 ├── docs/
 │   ├── README.md               # 文档索引
@@ -77,9 +81,11 @@ python -m venv .venv
 .venv/Scripts/python.exe -m pip install -e ".[dev]"
 
 # 断言测试 / 类型检查 / 金标
-.venv/Scripts/python.exe -m pytest -q                    # 65 passed
+.venv/Scripts/python.exe -m pytest -q                    # 85 passed
 .venv/Scripts/python.exe -m mypy                         # strict，零报错
-.venv/Scripts/python.exe tests/golden.py --check         # 205 条输出一致
+.venv/Scripts/python.exe tests/golden.py --check         # 默认输出
+.venv/Scripts/python.exe tests/golden.py --check --profile dp
+.venv/Scripts/python.exe tests/bench.py --smoke          # 500 字 DP 冒烟
 
 # 人工复核报告（写入 tests/results/）
 .venv/Scripts/python.exe -m qikou test
